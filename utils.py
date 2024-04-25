@@ -61,6 +61,12 @@ def cal_regu_term_lastyear(model, T=40):
 
 
 
+def get_working_block(model, year):
+  if year >= 62:
+    return model.work_retirement_block[f'year_{year}'].working_block
+  return model.work_block[f'year_{year}']
+    
+
 def cal_regu_term_each10(model):
 
   general_regu = 0
@@ -82,40 +88,40 @@ def cal_regu_term_each10(model):
     
     
     
-    w_g_1_pin_year = model.blocks_wr[f'year_{pin_year}'].general_layer_1.weight
-    w_g_2_pin_year = model.blocks_wr[f'year_{pin_year}'].general_layer_2.weight
+    w_g_1_pin_year = get_working_block(model,pin_year).general_layer_1.weight
+    w_g_2_pin_year = get_working_block(model,pin_year).general_layer_2.weight
     
-    b_g_1_pin_year = model.blocks_wr[f'year_{pin_year}'].general_layer_1.bias
-    b_g_2_pin_year = model.blocks_wr[f'year_{pin_year}'].general_layer_2.bias
+    b_g_1_pin_year = get_working_block(model,pin_year).general_layer_1.bias
+    b_g_2_pin_year = get_working_block(model,pin_year).general_layer_2.bias
 
 
-    w_h_pin_year = model.blocks_wr[f'year_{pin_year}'].task_layer_h.weight
-    w_a_pin_year = model.blocks_wr[f'year_{pin_year}'].task_layer_a.weight
+    w_h_pin_year = get_working_block(model,pin_year).task_layer_h.weight
+    w_a_pin_year = get_working_block(model,pin_year).task_layer_a.weight
     
-    b_h_pin_year = model.blocks_wr[f'year_{pin_year}'].task_layer_h.bias
-    b_a_pin_year = model.blocks_wr[f'year_{pin_year}'].task_layer_a.bias
+    b_h_pin_year = get_working_block(model,pin_year).task_layer_h.bias
+    b_a_pin_year = get_working_block(model,pin_year).task_layer_a.bias
     
     
     
 
-    w_g_1_t = model.blocks_wr[f'year_{year}'].general_layer_1.weight
-    w_g_2_t = model.blocks_wr[f'year_{year}'].general_layer_2.weight
-    b_g_1_t = model.blocks_wr[f'year_{year}'].general_layer_1.bias
-    b_g_2_t = model.blocks_wr[f'year_{year}'].general_layer_2.bias
+    w_g_1_t = get_working_block(model,year).general_layer_1.weight
+    w_g_2_t =  get_working_block(model,year).general_layer_2.weight
+    b_g_1_t =  get_working_block(model,year).general_layer_1.bias
+    b_g_2_t =  get_working_block(model,year).general_layer_2.bias
     general_regu += (torch.norm(w_g_1_pin_year[:,:year-AGE_0+3] - w_g_1_t , 2) + torch.norm(w_g_2_pin_year - w_g_2_t , 2)) / (pin_year - year)
     general_regu += (torch.norm(b_g_1_pin_year - b_g_1_t , 2) + torch.norm(b_g_2_pin_year - b_g_2_t , 2)) / (pin_year - year)
 
 
 
-    w_h_t = model.blocks_wr[f'year_{year}'].task_layer_h.weight
-    b_h_t = model.blocks_wr[f'year_{year}'].task_layer_h.bias
+    w_h_t =  get_working_block(model,year).task_layer_h.weight
+    b_h_t =  get_working_block(model,year).task_layer_h.bias
     
     task_regu_h += torch.norm(w_h_pin_year - w_h_t , 2) / (pin_year - year)
     task_regu_h += torch.norm(b_h_pin_year - b_h_t , 2) / (pin_year - year)
 
 
-    w_a_t = model.blocks_wr[f'year_{year}'].task_layer_a.weight
-    b_a_t = model.blocks_wr[f'year_{year}'].task_layer_a.bias
+    w_a_t =  get_working_block(model,year).task_layer_a.weight
+    b_a_t =  get_working_block(model,year).task_layer_a.bias
     task_regu_a += torch.norm(w_a_pin_year - w_a_t , 2) / (pin_year - year)
     task_regu_a += torch.norm(b_a_pin_year - b_a_t , 2) / (pin_year - year)
 
@@ -186,7 +192,7 @@ def utility_retirement_max_consumption(c_t_w, c_t_r, h_t_w, h_t_r, epoch, s_writ
   return total_utility_w + utility_r_max_senario.values,  utility_r_max_senario.indices
   
   
-def utility_retirement_pr(pr_t, c_t, h_t, epoch, s_writer, args, mode = 'train' ):
+def utility_retirement_pr(c_t, h_t, epoch, s_writer, args, mode = 'train' ):
   
   consumption_utility =  (c_t**(1-GAMMA))/(1-GAMMA)
   # consumption_utility_r  =  (c_t_r**(1-GAMMA))/(1-GAMMA)
@@ -215,9 +221,9 @@ def utility_retirement_pr(pr_t, c_t, h_t, epoch, s_writer, args, mode = 'train' 
   return  total_utility
 
   
-def loss_function_retirement_pr_cross(model,pr_t, c_t, h_t, epoch, s_writer, args):
+def loss_function_retirement_pr_cross(model, c_t, h_t, epoch, s_writer, args):
 
-  util = utility_retirement_pr(pr_t, c_t, h_t, epoch, s_writer, args) 
+  util = utility_retirement_pr( c_t, h_t, epoch, s_writer, args) 
   if args.reg_mode == 'each10':
       cal_regu_term = cal_regu_term_each10
   elif args.reg_mode == 'last_year':
