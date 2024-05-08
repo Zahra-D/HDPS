@@ -235,11 +235,12 @@ def inverse_wage(wage, t, edu):
     return theta
         
         
+    
 def policy_function_plot_asset(model, edu, type, all_a, all_w,  plots_base_dir= None, epoch= None):
     
     device = 'cuda'
     
-    fig, ax = plt.subplots(2, 3, figsize=(20,10))
+    fig, ax = plt.subplots(2, 3, figsize=(24,10))
     for i, age in enumerate([25, 40, 55]):
 
             
@@ -304,6 +305,8 @@ def policy_function_plot_asset(model, edu, type, all_a, all_w,  plots_base_dir= 
             curve1_0 = h1_0
             curve2_0 = h2_0
             curve3_0 = h3_0
+            
+            ylabel = 'work hour t'
         
             
             
@@ -329,7 +332,7 @@ def policy_function_plot_asset(model, edu, type, all_a, all_w,  plots_base_dir= 
             curve2_0 = (1.0 -x2_0.squeeze())*((y2_0) - social_security_tax(y2_0) + generated_a_0)* (1+R) 
             curve3_0 = (1.0 -x3_0.squeeze())*((y3_0) - social_security_tax(y3_0) + generated_a_0)* (1+R) 
         
-        
+            ylabel = 'Asset t+1'
 
         
         
@@ -338,7 +341,8 @@ def policy_function_plot_asset(model, edu, type, all_a, all_w,  plots_base_dir= 
         ax[1][i].plot(generated_a_1.detach().cpu(), curve3_1.detach().cpu(), color='pink', label='edu = 1, q=3')
         ax[1][i].legend()
         ax[1][i].set_title(f'{age} edu= 1')
-        ax[1][i].set_xlabel(f'asset t')
+        ax[1][i].set_xlabel(f'Asset t')
+        ax[1][i].set_ylabel(ylabel)
         
 
         ax[0][i].plot(generated_a_0.detach().cpu(), curve1_0.detach().cpu(), color='skyblue', label='edu = 0, q=1')
@@ -346,6 +350,8 @@ def policy_function_plot_asset(model, edu, type, all_a, all_w,  plots_base_dir= 
         ax[0][i].plot(generated_a_0.detach().cpu(), curve3_0.detach().cpu(), color='pink', label='edu = 0, q=3')
         ax[0][i].legend()
         ax[0][i].set_title(f'{age} edu= 0')
+        ax[0][i].set_xlabel(f'Asset t')
+        ax[0][i].set_ylabel(ylabel)
     
     # plt.plot(a_t_1, a_t)
     
