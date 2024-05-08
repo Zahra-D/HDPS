@@ -5,6 +5,13 @@ from Parameters import *
 from utils import *
 sns.set(color_codes=True)
 
+    
+    
+# from Parameters import *
+# import seaborn as sns #visualisation
+# import matplotlib.pyplot as plt #visualisation
+# sns.set(color_codes=True)
+
 
 
 
@@ -144,86 +151,81 @@ def policy_function_plot(model, edu, type, all_a, all_theta,  plots_base_dir, ep
     # plt.plot(a_t_1, a_t)
     
     
-    
-    
-from Parameters import *
-import seaborn as sns #visualisation
-import matplotlib.pyplot as plt #visualisation
-sns.set(color_codes=True)
 
 
 
 
-def Histograms_All( data, edu, type, plots_base_dir, epoch):
-    plt.figure(figsize=(15,7))
-    plt.hist(data[edu > 0].view(-1), edgecolor='skyblue', bins=400, alpha= .4, label='edu = 1' )
-    plt.hist(data[edu <= 0].view(-1), edgecolor='orange', bins=400, alpha= .4, label='edu = 0' )
-    plt.legend()
-    plt.title(f'Histogram of all {type}') 
-    plt.savefig(f'{plots_base_dir}/epoch{epoch}/histograms/hist_{type}_all.png')
-    plt.close()
+
+# def Histograms_All( data, edu, type, plots_base_dir, epoch):
+#     plt.figure(figsize=(15,7))
+#     plt.hist(data[edu > 0].view(-1), edgecolor='skyblue', bins=400, alpha= .4, label='edu = 1' )
+#     plt.hist(data[edu <= 0].view(-1), edgecolor='orange', bins=400, alpha= .4, label='edu = 0' )
+#     plt.legend()
+#     plt.title(f'Histogram of all {type}') 
+#     plt.savefig(f'{plots_base_dir}/epoch{epoch}/histograms/hist_{type}_all.png')
+#     plt.close()
     
     
 
-def Histograms_Individual_Ages(data, edu, type, plots_base_dir, epoch):
+# def Histograms_Individual_Ages(data, edu, type, plots_base_dir, epoch):
     
     
-    flag = type in ['Consumption', 'Asset']
+#     flag = type in ['Consumption', 'Asset']
         
-    fig, ax = plt.subplots(1, 3+flag, figsize=(15,5))
-    fig.suptitle('Histogram of Work Hour for ages 25, 40, and 55')
-    ax[0].hist(data[edu > 0][:,25 - AGE_0].view(-1), bins=400,  edgecolor='skyblue', alpha= .4, label='edu = 1')
-    ax[0].hist(data[edu <= 0][:,25 - AGE_0].view(-1), bins=400,  edgecolor='orange', alpha= .4, label='edu = 0')
-    ax[0].set_title('Age 25')
+#     fig, ax = plt.subplots(1, 3+flag, figsize=(15,5))
+#     fig.suptitle('Histogram of Work Hour for ages 25, 40, and 55')
+#     ax[0].hist(data[edu > 0][:,25 - AGE_0].view(-1), bins=400,  edgecolor='skyblue', alpha= .4, label='edu = 1')
+#     ax[0].hist(data[edu <= 0][:,25 - AGE_0].view(-1), bins=400,  edgecolor='orange', alpha= .4, label='edu = 0')
+#     ax[0].set_title('Age 25')
     
     
-    ax[1].hist(data[edu > 0][:,40 - AGE_0].view(-1), bins=400,  edgecolor='skyblue', alpha= .4, label='edu = 1')
-    ax[1].hist(data[edu <= 0][:,40 - AGE_0].view(-1), bins=400,  edgecolor='orange', alpha= .4, label='edu = 0')
-    ax[1].set_title('Age 40')
+#     ax[1].hist(data[edu > 0][:,40 - AGE_0].view(-1), bins=400,  edgecolor='skyblue', alpha= .4, label='edu = 1')
+#     ax[1].hist(data[edu <= 0][:,40 - AGE_0].view(-1), bins=400,  edgecolor='orange', alpha= .4, label='edu = 0')
+#     ax[1].set_title('Age 40')
     
-    ax[2].hist(data[edu <= 0][:,55 - AGE_0].view(-1), bins=400,  edgecolor='skyblue', alpha= .4, label='edu = 1')
-    ax[2].hist(data[edu <= 0][:,55 - AGE_0].view(-1), bins=400,  edgecolor='orange', alpha= .4, label='edu = 0')
-    ax[2].set_title('Age 55')
+#     ax[2].hist(data[edu <= 0][:,55 - AGE_0].view(-1), bins=400,  edgecolor='skyblue', alpha= .4, label='edu = 1')
+#     ax[2].hist(data[edu <= 0][:,55 - AGE_0].view(-1), bins=400,  edgecolor='orange', alpha= .4, label='edu = 0')
+#     ax[2].set_title('Age 55')
     
     
-    if flag:
-        ax[3].hist(data[edu <= 0][:,75 - AGE_0].view(-1), bins=400,  edgecolor='skyblue', alpha= .4, label='edu = 1')
-        ax[3].hist(data[edu <= 0][:,75 - AGE_0].view(-1), bins=400,  edgecolor='orange', alpha= .4, label='edu = 0')
-        ax[3].set_title('Age 75')
+#     if flag:
+#         ax[3].hist(data[edu <= 0][:,75 - AGE_0].view(-1), bins=400,  edgecolor='skyblue', alpha= .4, label='edu = 1')
+#         ax[3].hist(data[edu <= 0][:,75 - AGE_0].view(-1), bins=400,  edgecolor='orange', alpha= .4, label='edu = 0')
+#         ax[3].set_title('Age 75')
         
     
-    plt.legend()
-    plt.savefig(f'{plots_base_dir}/epoch{epoch}/histograms/hist_{type}_25_40_55.png')
-    plt.close()
+#     plt.legend()
+#     plt.savefig(f'{plots_base_dir}/epoch{epoch}/histograms/hist_{type}_25_40_55.png')
+#     plt.close()
     
     
     
     
     
     
-def plot_trend(data, edu, mask_retirement, type, plots_base_dir, epoch):
+# def plot_trend(data, edu, mask_retirement, type, plots_base_dir, epoch):
     
-    plt.figure(figsize=(15,7))
+#     plt.figure(figsize=(15,7))
     
     
-    if type in ['Income', 'Work_Hour']:
-        weights_edu_0 = torch.concat( [torch.ones((T_ER - AGE_0)) * len(data[edu<=0]) , mask_retirement[edu<=0].sum(dim=0)], dim = 0) 
-        weights_edu_1 = torch.concat( [torch.ones((T_ER - AGE_0)) * len(data[edu>0]) , mask_retirement[edu>0].sum(dim=0)], dim = 0) 
+#     if type in ['Income', 'Work_Hour']:
+#         weights_edu_0 = torch.concat( [torch.ones((T_ER - AGE_0)) * len(data[edu<=0]) , mask_retirement[edu<=0].sum(dim=0)], dim = 0) 
+#         weights_edu_1 = torch.concat( [torch.ones((T_ER - AGE_0)) * len(data[edu>0]) , mask_retirement[edu>0].sum(dim=0)], dim = 0) 
         
-        plt.plot( data[edu > 0][:,:T_LR].sum(dim=0)/weights_edu_1, color='skyblue', label='edu = 1')
-        plt.plot( data[edu <= 0][:,:T_LR].sum(dim=0)/weights_edu_0, color='orange', label='edu = 0')
+#         plt.plot( data[edu > 0][:,:T_LR].sum(dim=0)/weights_edu_1, color='skyblue', label='edu = 1')
+#         plt.plot( data[edu <= 0][:,:T_LR].sum(dim=0)/weights_edu_0, color='orange', label='edu = 0')
         
-        plt.xticks(AGE_0, T_LR+1)
+#         plt.xticks(AGE_0, T_LR+1)
 
-    elif type in ['Consumption', 'Asset']:
-        plt.plot( data[edu > 0].median(dim=0), color='skyblue', label='edu = 1')
-        plt.plot( data[edu <= 0].median(dim=0), color='orange', label='edu = 0')
-        plt.xticks(AGE_0, AGE_0 + len(data[0])+1)
+#     elif type in ['Consumption', 'Asset']:
+#         plt.plot( data[edu > 0].median(dim=0), color='skyblue', label='edu = 1')
+#         plt.plot( data[edu <= 0].median(dim=0), color='orange', label='edu = 0')
+#         plt.xticks(AGE_0, AGE_0 + len(data[0])+1)
     
-    plt.legend()
-    plt.title(f'Trend of {type}') 
-    plt.savefig(f'{plots_base_dir}/epoch{epoch}/trend/trend_{type}.png')
-    plt.close()
+#     plt.legend()
+#     plt.title(f'Trend of {type}') 
+#     plt.savefig(f'{plots_base_dir}/epoch{epoch}/trend/trend_{type}.png')
+#     plt.close()
     
     
 def inverse_wage(wage, t, edu):

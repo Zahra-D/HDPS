@@ -503,7 +503,7 @@ class Model(nn.Module):
     
       # t_t = torch.ones_like(a_t) * (i+AGE_0)
       
-      x_t = self.retirement_block(a_r_t, b_bar)
+      x_t = self.retirement_block[f'year_{i+AGE_0}'](a_r_t, b_bar)
       c_t = (x_t *(benefit + a_t)) + 1e-8
   
       
