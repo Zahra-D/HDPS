@@ -1,11 +1,9 @@
-import torch
-from Parameters import *
+
+from imports import *
+
 from functions import *
-import pathlib
-import seaborn as sns #visualisation
-import matplotlib.pyplot as plt #visualisation
-import torch.nn.functional as F
-from torch.utils.data import DataLoader, TensorDataset
+from Parameters import *
+
 
 sns.set(color_codes=True)
 
@@ -18,10 +16,10 @@ def cal_regu_term_lastyear(model, T=40):
 
 
   w_h_T = model.blocks[f'year_{T}'].task_layer_h.weight
-  w_a_T = model.blocks[f'year_{T}'].task_layer_a.weight
+  w_a_T = model.blocks[f'year_{T}'].task_layer_a_w.weight
   
   b_h_T = model.blocks[f'year_{T}'].task_layer_h.bias
-  b_a_T = model.blocks[f'year_{T}'].task_layer_a.bias
+  b_a_T = model.blocks[f'year_{T}'].task_layer_a_w.bias
 
 
   general_regu = 0
@@ -50,8 +48,8 @@ def cal_regu_term_lastyear(model, T=40):
     task_regu_h += torch.norm(b_h_T - b_h_t , 2) / (T - year)
 
 
-    w_a_t = model.blocks[f'year_{year}'].task_layer_a.weight
-    b_a_t = model.blocks[f'year_{year}'].task_layer_a.bias
+    w_a_t = model.blocks[f'year_{year}'].task_layer_a_w.weight
+    b_a_t = model.blocks[f'year_{year}'].task_layer_a_w.bias
     task_regu_a += torch.norm(w_a_T - w_a_t , 2) / (T - year)
     task_regu_a += torch.norm(b_a_T - b_a_t , 2) / (T - year)
 
@@ -72,6 +70,7 @@ def cal_regu_term_each10(model):
   general_regu = 0
   task_regu_a = 0
   task_regu_h = 0
+  retier_year = 0
 
 
   for year in range(AGE_0,T_LR):
@@ -80,6 +79,7 @@ def cal_regu_term_each10(model):
       continue
     pin_year = (((year-1)//10)+1)*10 +1
     if year >= 62:
+      retier_year = 1
       pin_year = 69
     
 
@@ -96,10 +96,10 @@ def cal_regu_term_each10(model):
 
 
     w_h_pin_year = get_working_block(model,pin_year).task_layer_h.weight
-    w_a_pin_year = get_working_block(model,pin_year).task_layer_a.weight
+    w_a_pin_year = get_working_block(model,pin_year).task_layer_a_w.weight
     
     b_h_pin_year = get_working_block(model,pin_year).task_layer_h.bias
-    b_a_pin_year = get_working_block(model,pin_year).task_layer_a.bias
+    b_a_pin_year = get_working_block(model,pin_year).task_layer_a_w.bias
     
     
     
@@ -108,7 +108,7 @@ def cal_regu_term_each10(model):
     w_g_2_t =  get_working_block(model,year).general_layer_2.weight
     b_g_1_t =  get_working_block(model,year).general_layer_1.bias
     b_g_2_t =  get_working_block(model,year).general_layer_2.bias
-    general_regu += (torch.norm(w_g_1_pin_year[:,:year-AGE_0+3] - w_g_1_t , 2) + torch.norm(w_g_2_pin_year - w_g_2_t , 2)) / (pin_year - year)
+    general_regu += (torch.norm(w_g_1_pin_year[:,:year-AGE_0+3+retier_year] - w_g_1_t , 2) + torch.norm(w_g_2_pin_year - w_g_2_t , 2)) / (pin_year - year)
     general_regu += (torch.norm(b_g_1_pin_year - b_g_1_t , 2) + torch.norm(b_g_2_pin_year - b_g_2_t , 2)) / (pin_year - year)
 
 
@@ -120,8 +120,8 @@ def cal_regu_term_each10(model):
     task_regu_h += torch.norm(b_h_pin_year - b_h_t , 2) / (pin_year - year)
 
 
-    w_a_t =  get_working_block(model,year).task_layer_a.weight
-    b_a_t =  get_working_block(model,year).task_layer_a.bias
+    w_a_t =  get_working_block(model,year).task_layer_a_w.weight
+    b_a_t =  get_working_block(model,year).task_layer_a_w.bias
     task_regu_a += torch.norm(w_a_pin_year - w_a_t , 2) / (pin_year - year)
     task_regu_a += torch.norm(b_a_pin_year - b_a_t , 2) / (pin_year - year)
 
@@ -513,4 +513,29 @@ def generating_dataset(number_samples, duration, theta_0, p_edu):
    
   
   
+
+
+
+def save_checkpoint(model, optimizer, base_dir, epoch):
+    
+    pathlib.Path(f'{base_dir}/epoch{epoch}').mkdir(parents=True)
+
+
+                
+    torch.save(optimizer.state_dict(), f'{base_dir}/epoch{epoch}/optimizer_state.pth')
+    rng_checkpoint = {
+        'torch_rng_state':
+            torch.get_rng_state(),
+        'cuda_rng_state':
+            torch.cuda.get_rng_state_all(),
+        'numpy_rng_state':
+            np.random.get_state(),
+        'python_rng_state':
+            random.getstate()
+    }
+    
+    with open(f'{base_dir}/epoch{epoch}/rng_checkpoint.pkl', 'wb') as f:
+        pickle.dump(rng_checkpoint, f)
+    
+    torch.save(model, f"{base_dir}/epoch{epoch}/model.pt")
 

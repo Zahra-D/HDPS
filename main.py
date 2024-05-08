@@ -1,24 +1,11 @@
-# %%
-import numpy as np
-import torch
 
+from imports import *
 
-import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset
-from tqdm import tqdm
-from torch.nn.utils import clip_grad_norm_
-from torch.utils.tensorboard import SummaryWriter
-
-
-import tensorflow_docs.vis.embed as embed
-from model import Model
 from Parameters import *
 from functions import *
 from utils import *
-import pathlib
-import random
-import argparse
-import torch.nn as nn
+from model import Model
+
 
 
 
@@ -30,8 +17,9 @@ import torch.nn as nn
 def train_step(model, dataloader, epoch, s_writer, optimizer, device, args):
     
     model.train()
-    
-    for batch_idx, batch in enumerate(dataloader):
+    train_iterator = tqdm(dataloader, desc=f"Epoch {epoch + 1}/{args.num_epochs}", unit="batch", leave=False)
+
+    for batch_idx, batch in enumerate(train_iterator):
 
         theta_t_, w_t_, edu_ = batch
         w_t_ = w_t_.to(device)
@@ -47,13 +35,14 @@ def train_step(model, dataloader, epoch, s_writer, optimizer, device, args):
         # c_t = torch.concat([c_w, (1-pr) * c_wr[:, :, 0] + pr * c_wr[:,:, 1], c_r ], dim = -1)
 
         loss = loss_function_retirement_pr_cross(model, all_c,  all_h, epoch, s_writer, args)
-        print(epoch, batch_idx, loss.item())
+        # print(epoch, batch_idx, loss.item())
         
         s_writer.add_scalar('Loss/all', loss.item(), epoch)
         # torch.autograd.set_detect_anomaly(True)
         loss.backward()
         optimizer.step()
         loss.detach().cpu()
+        train_iterator.set_postfix(loss=loss.item())
 
 
 
@@ -172,7 +161,7 @@ def main(args):
             
         for num_h_u in num_h_u_w:
             
-            model = Model(num_hidden_node_w=num_h_u )
+            model = Model(num_hidden_node_w=num_h_u, alpha_pr= args.alpha_pr )
             optimizer = optimizer_func(model.parameters(), lr=lr)
             model.to(device)
             
@@ -193,19 +182,25 @@ def main(args):
             saved_model_dir.mkdir(parents=True, exist_ok=True)
             saved_plot_dir.mkdir(parents=True, exist_ok=True)
             
+            args_dict = vars(args)
+            with open(f'{base_dir}/arguments.json', 'w') as file:
+                json.dump(args_dict, file, indent=4)
+            
             writer = SummaryWriter(saved_run_dir)
             
             
             for epoch in range(num_epochs):
-                print(epoch)
+                # print(epoch)
                 train_step(model, dataloader_train, epoch, writer, optimizer, device, args)
                 
                 if (epoch%args.save_interval_epoch)==0:
                     
-                    torch.save(model, saved_model_dir/f'model_epoch{epoch}.pt')
+                    save_checkpoint(model, optimizer, saved_model_dir, epoch)
+                    # torch.save(model, saved_model_dir/f'model_epoch{epoch}.pt')
 
-            torch.save(model, f'{base_dir}/model.pt')        
+            # torch.save(model, f'{base_dir}/model.pt')        
             # do_eval_save(model, dataloader_eval, base_dir, epoch, device, writer, args)
+            save_checkpoint(model, optimizer, saved_model_dir, epoch)
 
 
 
@@ -229,8 +224,9 @@ if __name__ == "__main__":
     parser.add_argument('--save_interval_epoch', type=int, default=100, help='Number of epochs between saving model checkpoints during training')
     parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--cuda_no', type=int, choices=[0,1],default=0, help='the index of cuda device to run the code on it')
-    parser.add_argument('--save_dir', type=str,default=pathlib.Path.home()/'HDPS/', help='the directory that the training result will be saved in')
+    parser.add_argument('--save_dir', type=str,default='./Experiments', help='the directory that the training result will be saved in')
     parser.add_argument('--phi', type=float, default=0.0006, help='Phi in utility')
+    parser.add_argument('--alpha_pr', type=float, default=5, help='the slop of sigmoid funciotn of pr')
  
     
     args = parser.parse_args()
