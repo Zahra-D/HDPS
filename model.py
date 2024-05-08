@@ -257,7 +257,7 @@ class EarlyRetiermentBlock(nn.Module):
         assert (year >= 62) and (year<=69)
         
         self.working_block = WorkYearBlock(num_input=year - AGE_0 + 3, num_hidden_node = num_hidden_node_w,  mode= 'early_retirement_year', alpha_pr=alpha_pr)
-        self.retirement_block = RetirementYearBlock(num_hidden_unit=num_hidden_node_r)
+        self.retirement_block = RetirementYearBlock(num_hidden_unit=num_hidden_node_r, year=year)
         
         self.year= year
         
@@ -272,9 +272,7 @@ class EarlyRetiermentBlock(nn.Module):
       def forward(self, theta, edu, a_w_t, a_r_t, all_y, w_t, b_t, pr_bar_t, b_bar_t):
         
         h_t, x_ww, pr_t, x_rw = self.working_block(theta, edu, a_w_t, all_y, b_t)
-        
-        t_t = torch.ones_like(x_ww) * (self.year)
-        x_rr = self.retirement_block(a_r_t, b_bar_t, t_t)
+        x_rr = self.retirement_block(a_r_t, b_bar_t)
           
           
 
@@ -378,12 +376,10 @@ class Model(nn.Module):
 
     self.work_block = nn.ModuleDict({ f'year_{i}': WorkYearBlock(i - AGE_0+3, num_hidden_node = num_hidden_node_w) for i in range(AGE_0, T_ER) })
     self.work_retirement_block = nn.ModuleDict({ f'year_{i}': EarlyRetiermentBlock(year=i, num_hidden_node_r=num_hidden_node_r, num_hidden_node_w= num_hidden_node_w, alpha_pr=alpha_pr ) for i in range(T_ER, T_LR) })
-    # self.retirement_block = nn.ModuleDict({ f'year_{i}': RetirementYearBlock(year=i) for i in range(T_LR, T_D+1) })
-    self.retirement_block = RetirementYearBlock(num_hidden_unit=num_hidden_node_r) 
+    self.retirement_block = nn.ModuleDict({ f'year_{i}': RetirementYearBlock(year=i) for i in range(T_LR, T_D+1) })
+    # self.retirement_block = RetirementYearBlock(num_hidden_unit=num_hidden_node_r) 
 
-    @property
-    def device(self):
-        return next(self.parameters()).device
+
     
 
 
@@ -505,9 +501,9 @@ class Model(nn.Module):
     for i in range(i_LR, i_D):
       
     
-      t_t = torch.ones_like(a_t) * (i+AGE_0)
+      # t_t = torch.ones_like(a_t) * (i+AGE_0)
       
-      x_t = self.retirement_block(a_r_t, b_bar, t_t)
+      x_t = self.retirement_block(a_r_t, b_bar)
       c_t = (x_t *(benefit + a_t)) + 1e-8
   
       
