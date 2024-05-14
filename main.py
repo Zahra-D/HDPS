@@ -30,11 +30,11 @@ def train_step(model, dataloader, epoch, s_writer, optimizer, device, args):
 
         
         optimizer.zero_grad()
-        all_a, all_c, all_pr_bar, all_h, all_y = model(theta_t_.to(device), edu_.to(device), a_1.to(device),w_t_)
+        all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y = model(theta_t_.to(device), edu_.to(device), a_1.to(device),w_t_)
         
         # c_t = torch.concat([c_w, (1-pr) * c_wr[:, :, 0] + pr * c_wr[:,:, 1], c_r ], dim = -1)
 
-        loss = loss_function_retirement_pr_cross(model, all_c,  all_h, epoch, s_writer, args)
+        loss = loss_function_retirement_pr_cross(model, all_c, all_c_ER, all_pr_bar, all_pr, all_h, epoch, s_writer, args)
         # print(epoch, batch_idx, loss.item())
         
         s_writer.add_scalar('Loss/all', loss.item(), epoch)

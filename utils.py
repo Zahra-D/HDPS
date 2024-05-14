@@ -192,21 +192,22 @@ def utility_retirement_max_consumption(c_t_w, c_t_r, h_t_w, h_t_r, epoch, s_writ
   return total_utility_w + utility_r_max_senario.values,  utility_r_max_senario.indices
   
   
-def utility_retirement_pr(c_t, h_t, epoch, s_writer, args, mode = 'train' ):
+def utility_retirement_pr(c_t, c_t_ER, pr_bar, pr_t, h_t, epoch, s_writer, args, mode = 'train' ):
   
   consumption_utility =  (c_t**(1-GAMMA))/(1-GAMMA)
-  # consumption_utility_r  =  (c_t_r**(1-GAMMA))/(1-GAMMA)
+  consumption_utility_ER  =  (c_t_ER**(1-GAMMA))/(1-GAMMA)
+  
+  consumption_utility[:,T_ER - AGE_0: T_LR - AGE_0 +1] = (1-pr_bar) * ( (1-pr_t) * consumption_utility_ER[:, 0] + pr_t * consumption_utility_ER[:, 1] )  +  pr_bar * (consumption_utility_ER[:, 2])
+  
+  h_t[:,T_ER - AGE_0: T_LR - AGE_0 +1] =  (1-pr_bar) * ( (1-pr_t) * h_t[:, T_ER - AGE_0: T_LR - AGE_0 +1] ) 
 
   
-  # if torch.isnan(consumption_utility).any().item():
-  #   print('devug')
-    
+
+
     
   device = c_t.device
   BETA_t = torch.pow(BETA, torch.arange(T_D - AGE_0 + 1)).to(device)
 
-  # h_t = torch.concat([h_t, torch.zeros()])
-  # h_t += 2
   work_hour_disutility = ((h_t/H[-1]) ** (1+1/ETA))/(1+1/ETA)
   # work_hour_disutility_r = ((h_t_r/H[-1]) ** (1+1/ETA))/(1+1/ETA)
   working_disutility =  (h_t > 0).int()
@@ -221,9 +222,9 @@ def utility_retirement_pr(c_t, h_t, epoch, s_writer, args, mode = 'train' ):
   return  total_utility
 
   
-def loss_function_retirement_pr_cross(model, c_t, h_t, epoch, s_writer, args):
+def loss_function_retirement_pr_cross(model, c_t, c_t_ER, pr_bar, pr_t ,h_t, epoch, s_writer, args):
 
-  util = utility_retirement_pr( c_t, h_t, epoch, s_writer, args) 
+  util = utility_retirement_pr( c_t, c_t_ER, pr_bar, pr_t, h_t, epoch, s_writer, args) 
   if args.reg_mode == 'each10':
       cal_regu_term = cal_regu_term_each10
   elif args.reg_mode == 'last_year':
