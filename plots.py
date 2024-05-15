@@ -123,7 +123,7 @@ def policy_function_plot(model, edu, type, all_a, all_theta,  plots_base_dir, ep
         
         
         if age <= T_LR:
-            block = model.work_block[f'year_{age}']
+            block = model.work_blocks[f'year_{age}']
         else:
             block = model.RetirementYearBlock
         

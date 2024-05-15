@@ -59,10 +59,11 @@ def cal_regu_term_lastyear(model, T=40):
 
 
 
+
 def get_working_block(model, year):
   if year >= 62:
-    return model.work_retirement_block[f'year_{year}'].working_block
-  return model.work_block[f'year_{year}']
+    return model.work_retirement_blocks[f'year_{year}'].working_block
+  return model.work_blocks[f'year_{year}']
     
 
 def cal_regu_term_each10(model):
