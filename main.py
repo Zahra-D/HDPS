@@ -32,7 +32,10 @@ def train_step(model, dataloader, epoch, s_writer, optimizer, device, args):
         optimizer.zero_grad()
         all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y = model(theta_t_.to(device), edu_.to(device), a_1.to(device),w_t_)
         
-        # c_t = torch.concat([c_w, (1-pr) * c_wr[:, :, 0] + pr * c_wr[:,:, 1], c_r ], dim = -1)
+        # c_t = torch.concat([all_c[:,:T_ER-AGE_0].repeat(3,1,1).permute(1,2,0),
+        #                     all_c_ER, 
+        #                     all_c[:,T_LR-AGE_0+1:].repeat(3,1,1).permute(1,2,0)
+        #                     ], dim = -2)
 
         loss = loss_function_retirement_pr_cross(model, all_c, all_c_ER, all_pr_bar, all_pr, all_h, epoch, s_writer, args)
         # print(epoch, batch_idx, loss.item())

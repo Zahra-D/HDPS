@@ -15,11 +15,11 @@ def cal_regu_term_lastyear(model, T=40):
   b_g_2_T = model.blocks[f'year_{T}'].general_layer_2.bias
 
 
-  w_h_T = model.blocks[f'year_{T}'].task_layer_h.weight
-  w_a_T = model.blocks[f'year_{T}'].task_layer_a_w.weight
+  w_h_T = model.blocks[f'year_{T}'].task_h.task_layer.weight
+  w_a_T = model.blocks[f'year_{T}'].task_a_w.task_layer.weight
   
-  b_h_T = model.blocks[f'year_{T}'].task_layer_h.bias
-  b_a_T = model.blocks[f'year_{T}'].task_layer_a_w.bias
+  b_h_T = model.blocks[f'year_{T}'].task_h.task_layer.bias
+  b_a_T = model.blocks[f'year_{T}'].task_a_w.task_layer.bias
 
 
   general_regu = 0
@@ -41,8 +41,8 @@ def cal_regu_term_lastyear(model, T=40):
 
 
 
-    w_h_t = model.blocks[f'year_{year}'].task_layer_h.weight
-    b_h_t = model.blocks[f'year_{year}'].task_layer_h.bias
+    w_h_t = model.blocks[f'year_{year}'].task_h.task_layer.weight
+    b_h_t = model.blocks[f'year_{year}'].task_h.task_layer.bias
     
     task_regu_h += torch.norm(w_h_T - w_h_t , 2) / (T - year)
     task_regu_h += torch.norm(b_h_T - b_h_t , 2) / (T - year)
@@ -79,7 +79,7 @@ def cal_regu_term_each10(model):
       continue
     pin_year = (((year-1)//10)+1)*10 +1
     if year >= 62:
-      retier_year = 1
+      # retier_year = 1
       pin_year = 69
     
 
@@ -95,11 +95,11 @@ def cal_regu_term_each10(model):
     b_g_2_pin_year = get_working_block(model,pin_year).general_layer_2.bias
 
 
-    w_h_pin_year = get_working_block(model,pin_year).task_layer_h.weight
-    w_a_pin_year = get_working_block(model,pin_year).task_layer_a_w.weight
+    w_h_pin_year = get_working_block(model,pin_year).task_h.task_layer.weight
+    w_a_pin_year = get_working_block(model,pin_year).task_a_w.task_layer.weight
     
-    b_h_pin_year = get_working_block(model,pin_year).task_layer_h.bias
-    b_a_pin_year = get_working_block(model,pin_year).task_layer_a_w.bias
+    b_h_pin_year = get_working_block(model,pin_year).task_h.task_layer.bias
+    b_a_pin_year = get_working_block(model,pin_year).task_a_w.task_layer.bias
     
     
     
@@ -113,15 +113,15 @@ def cal_regu_term_each10(model):
 
 
 
-    w_h_t =  get_working_block(model,year).task_layer_h.weight
-    b_h_t =  get_working_block(model,year).task_layer_h.bias
+    w_h_t =  get_working_block(model,year).task_h.task_layer.weight
+    b_h_t =  get_working_block(model,year).task_a_w.task_layer.bias
     
     task_regu_h += torch.norm(w_h_pin_year - w_h_t , 2) / (pin_year - year)
     task_regu_h += torch.norm(b_h_pin_year - b_h_t , 2) / (pin_year - year)
 
 
-    w_a_t =  get_working_block(model,year).task_layer_a_w.weight
-    b_a_t =  get_working_block(model,year).task_layer_a_w.bias
+    w_a_t =  get_working_block(model,year).task_h.task_layer.weight
+    b_a_t =  get_working_block(model,year).task_a_w.task_layer.bias
     task_regu_a += torch.norm(w_a_pin_year - w_a_t , 2) / (pin_year - year)
     task_regu_a += torch.norm(b_a_pin_year - b_a_t , 2) / (pin_year - year)
 
@@ -130,76 +130,82 @@ def cal_regu_term_each10(model):
 
 
 
-def loss_function_retirement_max_consumption(model,c_t_w, c_t_r, h_t_w, h_t_r, r_t,criteria_loss_R, epoch, s_writer, args):
+# def loss_function_retirement_max_consumption(model,c_t_w, c_t_r, h_t_w, h_t_r, r_t,criteria_loss_R, epoch, s_writer, args):
 
-  util, r_labels = utility_retirement_max_consumption(c_t_w, c_t_r, h_t_w, h_t_r, epoch, s_writer, args) 
-  if args.reg_mode == 'each10':
-      cal_regu_term = cal_regu_term_each10
-  elif args.reg_mode == 'last_year':
-      cal_regu_term = cal_regu_term_lastyear
-  general_regu, task_regu_a, task_regu_h =  cal_regu_term(model)
+#   util, r_labels = utility_retirement_max_consumption(c_t_w, c_t_r, h_t_w, h_t_r, epoch, s_writer, args) 
+#   if args.reg_mode == 'each10':
+#       cal_regu_term = cal_regu_term_each10
+#   elif args.reg_mode == 'last_year':
+#       cal_regu_term = cal_regu_term_lastyear
+#   general_regu, task_regu_a, task_regu_h =  cal_regu_term(model)
 
 
-  one_hot_labels = F.one_hot(r_labels, num_classes=T_LR - T_ER + 1)
+#   one_hot_labels = F.one_hot(r_labels, num_classes=T_LR - T_ER + 1)
   
-  loss_R = criteria_loss_R(r_t, one_hot_labels[:, :-1].float())
+#   loss_R = criteria_loss_R(r_t, one_hot_labels[:, :-1].float())
   
   
-  l_G= l_h = l_a  = args.lmbd
-  l_U = 1 - (l_G + l_a+ l_h + l_a)
-  reg_term = l_G * general_regu + l_h * task_regu_h + l_a * task_regu_a 
-  loss = -1 * l_U * util.mean() + reg_term + loss_R
+#   l_G= l_h = l_a  = args.lmbd
+#   l_U = 1 - (l_G + l_a+ l_h + l_a)
+#   reg_term = l_G * general_regu + l_h * task_regu_h + l_a * task_regu_a 
+#   loss = -1 * l_U * util.mean() + reg_term + loss_R
 
-  s_writer.add_scalar('Loss/reg_term',reg_term.detach().cpu(), epoch)
-  s_writer.add_scalar('Loss/util_term',util.mean().detach().cpu(), epoch)
-  s_writer.add_scalar('Loss/r_term',loss_R.detach().cpu(), epoch)
+#   s_writer.add_scalar('Loss/reg_term',reg_term.detach().cpu(), epoch)
+#   s_writer.add_scalar('Loss/util_term',util.mean().detach().cpu(), epoch)
+#   s_writer.add_scalar('Loss/r_term',loss_R.detach().cpu(), epoch)
   
   
-  return loss
+#   return loss
 
-def utility_retirement_max_consumption(c_t_w, c_t_r, h_t_w, h_t_r, epoch, s_writer, args, mode = 'train' ):
+# def utility_retirement_max_consumption(c_t_w, c_t_r, h_t_w, h_t_r, epoch, s_writer, args, mode = 'train' ):
   
-  consumption_utility_w  =  (c_t_w**(1-GAMMA))/(1-GAMMA)
-  consumption_utility_r  =  (c_t_r**(1-GAMMA))/(1-GAMMA)
+#   consumption_utility_w  =  (c_t_w**(1-GAMMA))/(1-GAMMA)
+#   consumption_utility_r  =  (c_t_r**(1-GAMMA))/(1-GAMMA)
 
   
-  # if torch.isnan(consumption_utility).any().item():
-  #   print('devug')
+#   # if torch.isnan(consumption_utility).any().item():
+#   #   print('devug')
     
     
-  device = c_t_w.device
-  BETA_t = torch.pow(BETA, torch.arange(T_D - AGE_0 + 1)).to(device)
+#   device = c_t_w.device
+#   BETA_t = torch.pow(BETA, torch.arange(T_D - AGE_0 + 1)).to(device)
 
-  # h_t = torch.concat([h_t, torch.zeros()])
-  # h_t += 2
-  work_hour_disutility_w = ((h_t_w/H[-1]) ** (1+1/ETA))/(1+1/ETA)
-  work_hour_disutility_r = ((h_t_r/H[-1]) ** (1+1/ETA))/(1+1/ETA)
-  working_disutility_w =  (h_t_w > 0).int()
-  working_disutility_r =  (h_t_r > 0).int()
-  total_utility_w = (BETA_t[:T_ER-AGE_0] * (consumption_utility_w - PHI * working_disutility_w - args.psi * work_hour_disutility_w)).sum(dim=-1)
-  # total_utility = (BETA_t * (consumption_utility  -  args.psi * work_hour_disutility - PHI * working_disutility)).sum(dim=-1)
-  total_utility_r = (BETA_t[T_ER-AGE_0:, None] * (consumption_utility_r - PHI * working_disutility_r - args.psi * work_hour_disutility_r)).sum(dim=-2)
+#   # h_t = torch.concat([h_t, torch.zeros()])
+#   # h_t += 2
+#   work_hour_disutility_w = ((h_t_w/H[-1]) ** (1+1/ETA))/(1+1/ETA)
+#   work_hour_disutility_r = ((h_t_r/H[-1]) ** (1+1/ETA))/(1+1/ETA)
+#   working_disutility_w =  (h_t_w > 0).int()
+#   working_disutility_r =  (h_t_r > 0).int()
+#   total_utility_w = (BETA_t[:T_ER-AGE_0] * (consumption_utility_w - PHI * working_disutility_w - args.psi * work_hour_disutility_w)).sum(dim=-1)
+#   # total_utility = (BETA_t * (consumption_utility  -  args.psi * work_hour_disutility - PHI * working_disutility)).sum(dim=-1)
+#   total_utility_r = (BETA_t[T_ER-AGE_0:, None] * (consumption_utility_r - PHI * working_disutility_r - args.psi * work_hour_disutility_r)).sum(dim=-2)
 
-  utility_r_max_senario = total_utility_r.max(dim = -1)
+#   utility_r_max_senario = total_utility_r.max(dim = -1)
 
-  # s_writer.add_scalar(f'{mode}/con_util', (BETA_t * consumption_utility).sum(dim=-1).mean().detach().cpu(), epoch)
-  # s_writer.add_scalar(f'{mode}/work_dis',(args.psi * BETA_t * work_hour_disutility).sum(dim=-1).mean().detach().cpu(), epoch)
-  # # s_writer.add_scalar(f'{mode}/retirment',( PSI_R * BETA_t[-1] * retirement_utility).mean().detach().cpu(), epoch)
-  # s_writer.add_scalar(f'{mode}/utility',total_utility.mean().detach().cpu(), epoch)
+#   # s_writer.add_scalar(f'{mode}/con_util', (BETA_t * consumption_utility).sum(dim=-1).mean().detach().cpu(), epoch)
+#   # s_writer.add_scalar(f'{mode}/work_dis',(args.psi * BETA_t * work_hour_disutility).sum(dim=-1).mean().detach().cpu(), epoch)
+#   # # s_writer.add_scalar(f'{mode}/retirment',( PSI_R * BETA_t[-1] * retirement_utility).mean().detach().cpu(), epoch)
+#   # s_writer.add_scalar(f'{mode}/utility',total_utility.mean().detach().cpu(), epoch)
   
  
 
-  return total_utility_w + utility_r_max_senario.values,  utility_r_max_senario.indices
+#   return total_utility_w + utility_r_max_senario.values,  utility_r_max_senario.indices
   
   
 def utility_retirement_pr(c_t, c_t_ER, pr_bar, pr_t, h_t, epoch, s_writer, args, mode = 'train' ):
   
-  consumption_utility =  (c_t**(1-GAMMA))/(1-GAMMA)
-  consumption_utility_ER  =  (c_t_ER**(1-GAMMA))/(1-GAMMA)
+  # consumption_utility =  (c_t**(1-GAMMA))/(1-GAMMA)
+  # consumption_utility_ER  =  (c_t_ER**(1-GAMMA))/(1-GAMMA)
+  # consumption_utility[:,T_ER - AGE_0: T_LR - AGE_0 +1, 0] = 0
   
-  consumption_utility[:,T_ER - AGE_0: T_LR - AGE_0 +1] = (1-pr_bar) * ( (1-pr_t) * consumption_utility_ER[:, 0] + pr_t * consumption_utility_ER[:, 1] )  +  pr_bar * (consumption_utility_ER[:, 2])
+  # consumption_utility[:,T_ER - AGE_0: T_LR - AGE_0 +1] = (1-pr_bar) * ( (1-pr_t) * consumption_utility[:, :,0] + pr_t * consumption_utility[:,:, 1] )  +  pr_bar * (consumption_utility[:,:, 2])
   
-  h_t[:,T_ER - AGE_0: T_LR - AGE_0 +1] =  (1-pr_bar) * ( (1-pr_t) * h_t[:, T_ER - AGE_0: T_LR - AGE_0 +1] ) 
+  # The code is assigning the value 0 to a specific slice of a 3-dimensional NumPy array
+  # `consumption_utility`. The slice being assigned is from index `T_ER - AGE_0` to `T_LR - AGE_0`
+  # along the second dimension (axis 1) and all elements along the first and third dimensions (axes 0
+  # and 2 respectively).
+  # h_t_ER =  (1-pr_bar) * ( (1-pr_t) * h_t[:, T_ER - AGE_0: T_LR - AGE_0 +1] ) 
+  
 
   
 
@@ -207,11 +213,29 @@ def utility_retirement_pr(c_t, c_t_ER, pr_bar, pr_t, h_t, epoch, s_writer, args,
     
   device = c_t.device
   BETA_t = torch.pow(BETA, torch.arange(T_D - AGE_0 + 1)).to(device)
+  dummy_h = torch.zeros_like(c_t_ER[:, :,0]).to(device)
+  i_ER = T_ER - AGE_0
+  i_LR = T_LR - AGE_0
+  
+  utility_ER = utility(c_t[:,:i_ER], h_t[:,:i_ER], BETA_t[:i_ER], args)
+  
 
-  work_hour_disutility = ((h_t/H[-1]) ** (1+1/ETA))/(1+1/ETA)
-  # work_hour_disutility_r = ((h_t_r/H[-1]) ** (1+1/ETA))/(1+1/ETA)
-  working_disutility =  (h_t > 0).int()
-  total_utility = (BETA_t * (consumption_utility - args.phi * working_disutility - args.psi * work_hour_disutility)).sum(dim=-1)
+
+  utility_ww = utility(c_t_ER[:,:, 0], h_t[:,i_ER: i_LR +1], BETA_t[i_ER: i_LR+1], args)
+  utility_rw = utility(c_t_ER[:,:, 1], dummy_h, BETA_t[i_ER: i_LR+1], args)
+  utility_rr = utility(c_t_ER[:,:, 2], dummy_h, BETA_t[i_ER: i_LR+1], args)
+  utility_LR = (1-pr_bar) * ( (1-pr_t) * utility_ww + pr_t * utility_rw )  +  pr_bar * (utility_rr)
+  
+
+  utility_D = utility(c_t[:,i_LR+1:], h_t[:,i_LR+1:], BETA_t[i_LR+1:],  args)
+  
+  
+  # work_hour_disutility = ((h_t/H[-1]) ** (1+1/ETA))/(1+1/ETA)
+  # # work_hour_disutility_r = ((h_t_r/H[-1]) ** (1+1/ETA))/(1+1/ETA)
+  # working_disutility=  (h_t > 0).int()
+  # utility = (BETA_t.unsqueeze(-1) * (consumption_utility - args.phi * working_disutility.unsqueeze(-1) - args.psi * work_hour_disutility.unsqueeze(-1))).sum(dim=-2)
+  total_utility =  utility_ER.sum(dim=-1) + utility_LR.sum(dim=-1) + utility_D.sum(dim=-1)
+  
   # total_utility = (BETA_t * (consumption_utility  -  args.psi * work_hour_disutility - PHI * working_disutility)).sum(dim=-1)
   # total_utility_r = (BETA_t[T_ER-AGE_0:, None] * (consumption_utility_r - PHI * working_disutility_r - args.psi * work_hour_disutility_r)).sum(dim=-2)
 
@@ -220,6 +244,17 @@ def utility_retirement_pr(c_t, c_t_ER, pr_bar, pr_t, h_t, epoch, s_writer, args,
   # utility_pr = torch.einsum('bs,bs->b', total_utility_r, senario_prob)
   # 
   return  total_utility
+
+
+def utility(c_t, h_t,BETA_t, args):
+  consumption_utility =  (c_t**(1-GAMMA))/(1-GAMMA)
+  work_hour_disutility = ((h_t/H[-1]) ** (1+1/ETA))/(1+1/ETA)
+  working_disutility =  (h_t > 0).int()
+  utility = (BETA_t * (consumption_utility - args.phi * working_disutility - args.psi * work_hour_disutility))
+  return utility
+
+  
+  
 
   
 def loss_function_retirement_pr_cross(model, c_t, c_t_ER, pr_bar, pr_t ,h_t, epoch, s_writer, args):
@@ -255,90 +290,90 @@ def loss_function_retirement_pr_cross(model, c_t, c_t_ER, pr_bar, pr_t ,h_t, epo
   
   
    
-def loss_function_retirement_pr(model,pr_t, c_t_w, c_t_r, h_t_w, h_t_r, r_t,criteria_loss_R, epoch, s_writer, args):
+# def loss_function_retirement_pr(model,pr_t, c_t_w, c_t_r, h_t_w, h_t_r, r_t,criteria_loss_R, epoch, s_writer, args):
 
-  util = utility_retirement_pr(pr_t, c_t_w, c_t_r, h_t_w, h_t_r, epoch, s_writer, args) 
-  if args.reg_mode == 'each10':
-      cal_regu_term = cal_regu_term_each10
-  elif args.reg_mode == 'last_year':
-      cal_regu_term = cal_regu_term_lastyear
-  general_regu, task_regu_a, task_regu_h =  cal_regu_term(model)
-
-
-
-  # one_hot_labels = F.one_hot(r_t, num_classes=T_LR - T_ER + 1)
-  
-  
-  
-  
-  l_G= l_h = l_a  = args.lmbd
-  l_U = 1 - (l_G + l_a+ l_h + l_a)
-  reg_term = l_G * general_regu + l_h * task_regu_h + l_a * task_regu_a 
-  loss = -1 * l_U * util.mean() + reg_term 
-
-  
-  
-
-  s_writer.add_scalar('Loss/reg_term',reg_term.detach().cpu(), epoch)
-  s_writer.add_scalar('Loss/util_term',util.mean().detach().cpu(), epoch)
-  # s_writer.add_scalar('Loss/r_term',loss_R.detach().cpu(), epoch)
-  
-  
-  return loss  
-  
-  
-  
-def utility_function(x_t, a_t, h_t, w_t, epoch, s_writer, args, mode = 'train' ):
+#   util = utility_retirement_pr(pr_t, c_t_w, c_t_r, h_t_w, h_t_r, epoch, s_writer, args) 
+#   if args.reg_mode == 'each10':
+#       cal_regu_term = cal_regu_term_each10
+#   elif args.reg_mode == 'last_year':
+#       cal_regu_term = cal_regu_term_lastyear
+#   general_regu, task_regu_a, task_regu_h =  cal_regu_term(model)
 
 
 
-  consumption_ = x_t * (w_t * h_t + a_t[:,:-1]) + 1e-8
-  consumption_utility  =  (consumption_**(1-GAMMA))/(1-GAMMA)
+#   # one_hot_labels = F.one_hot(r_t, num_classes=T_LR - T_ER + 1)
   
-  if torch.isnan(consumption_utility).any().item():
-    print('devug')
+  
+  
+  
+#   l_G= l_h = l_a  = args.lmbd
+#   l_U = 1 - (l_G + l_a+ l_h + l_a)
+#   reg_term = l_G * general_regu + l_h * task_regu_h + l_a * task_regu_a 
+#   loss = -1 * l_U * util.mean() + reg_term 
+
+  
+  
+
+#   s_writer.add_scalar('Loss/reg_term',reg_term.detach().cpu(), epoch)
+#   s_writer.add_scalar('Loss/util_term',util.mean().detach().cpu(), epoch)
+#   # s_writer.add_scalar('Loss/r_term',loss_R.detach().cpu(), epoch)
+  
+  
+#   return loss  
+  
+  
+  
+# def utility_function(x_t, a_t, h_t, w_t, epoch, s_writer, args, mode = 'train' ):
+
+
+
+#   consumption_ = x_t * (w_t * h_t + a_t[:,:-1]) + 1e-8
+#   consumption_utility  =  (consumption_**(1-GAMMA))/(1-GAMMA)
+  
+#   if torch.isnan(consumption_utility).any().item():
+#     print('devug')
     
     
-  device = w_t.device
-  BETA_t = torch.pow(BETA, torch.arange(T+1)).to(device)
+#   device = w_t.device
+#   BETA_t = torch.pow(BETA, torch.arange(T+1)).to(device)
 
-  work_hour_disutility = ((h_t/H[-1]) ** (1+1/ETA))/(1+1/ETA)
-  retirement_utility = torch.log(T_R * (torch.sum(w_t * h_t, dim=-1)/T + a_t[:, -1]))
-  total_utility = (BETA_t[:T] * (consumption_utility  -  args.psi * work_hour_disutility)).sum(dim=-1)  + PSI_R *  BETA_t[-1] * retirement_utility
+#   work_hour_disutility = ((h_t/H[-1]) ** (1+1/ETA))/(1+1/ETA)
+#   retirement_utility = torch.log(T_R * (torch.sum(w_t * h_t, dim=-1)/T + a_t[:, -1]))
+#   total_utility = (BETA_t[:T] * (consumption_utility  -  args.psi * work_hour_disutility)).sum(dim=-1)  + PSI_R *  BETA_t[-1] * retirement_utility
 
 
-  s_writer.add_scalar(f'{mode}/con_util', (BETA_t[:T] * consumption_utility).sum(dim=-1).mean().detach().cpu(), epoch)
-  s_writer.add_scalar(f'{mode}/work_dis',(args.psi * BETA_t[:T] * work_hour_disutility).sum(dim=-1).mean().detach().cpu(), epoch)
-  s_writer.add_scalar(f'{mode}/retirement',( PSI_R * BETA_t[-1] * retirement_utility).mean().detach().cpu(), epoch)
-  s_writer.add_scalar(f'{mode}/utility',total_utility.mean().detach().cpu(), epoch)
+#   s_writer.add_scalar(f'{mode}/con_util', (BETA_t[:T] * consumption_utility).sum(dim=-1).mean().detach().cpu(), epoch)
+#   s_writer.add_scalar(f'{mode}/work_dis',(args.psi * BETA_t[:T] * work_hour_disutility).sum(dim=-1).mean().detach().cpu(), epoch)
+#   s_writer.add_scalar(f'{mode}/retirement',( PSI_R * BETA_t[-1] * retirement_utility).mean().detach().cpu(), epoch)
+#   s_writer.add_scalar(f'{mode}/utility',total_utility.mean().detach().cpu(), epoch)
   
  
 
-  return total_utility 
+#   return total_utility 
 
 
 
 
 
 
-def loss_function(model,x_t, a_t, h_t, w_t, epoch, s_writer, args):
+# def loss_function(model,x_t, a_t, h_t, w_t, epoch, s_writer, args):
 
-  util = utility_function(x_t, a_t, h_t, w_t, epoch, s_writer, args) 
-  if args.reg_mode == 'each10':
-      cal_regu_term = cal_regu_term_each10
-  elif args.reg_mode == 'last_year':
-      cal_regu_term = cal_regu_term_lastyear
-  general_regu, task_regu_a, task_regu_h =  cal_regu_term(model)
+#   util = utility_function(x_t, a_t, h_t, w_t, epoch, s_writer, args) 
+#   if args.reg_mode == 'each10':
+#       cal_regu_term = cal_regu_term_each10
+#   elif args.reg_mode == 'last_year':
+#       cal_regu_term = cal_regu_term_lastyear
+#   general_regu, task_regu_a, task_regu_h =  cal_regu_term(model)
 
 
-  l_G= l_h = l_a  = args.lmbd
-  l_U = 1 - (l_G + l_a+ l_h + l_a)
-  reg_term = l_G * general_regu + l_h * task_regu_h + l_a * task_regu_a 
-  loss = -1 * l_U * util.mean() + reg_term
+#   l_G= l_h = l_a  = args.lmbd
+#   l_U = 1 - (l_G + l_a+ l_h + l_a)
+#   reg_term = l_G * general_regu + l_h * task_regu_h + l_a * task_regu_a 
+#   loss = -1 * l_U * util.mean() + reg_term
   
-  s_writer.add_scalar('Loss/reg_term',reg_term.detach().cpu(), epoch)
+#   s_writer.add_scalar('Loss/reg_term',reg_term.detach().cpu(), epoch)
   
-  return loss
+#   return loss
 
 
 

@@ -25,9 +25,9 @@ def dimension_corrector(func):
 
 
 
-class TaskBlock():
+class TaskBlock(nn.Module):
 
-  def __init__(self, num_hidden_node=10, num_output = 1, activation_funcion = nn.GELU):
+  def __init__(self, num_hidden_node=10, num_output = 1, activation_funcion = nn.GELU()):
     super().__init__()
         # third layer which is task specific layer, one for h and one for a
     # third layer which is task specific layer, one for h and one for a
@@ -65,13 +65,14 @@ class WorkYearBlock(nn.Module):
     super().__init__()
     
     
-    if mode == "early_retirement_year":
-      num_input += 1 # there should be benefit as well
+    # if mode == "early_retirement_year":
+    #   num_input += 1 # there should be benefit as well
     self.bn_input = nn.BatchNorm1d(num_input)
     
     #it could be either working_years or early_retirement_years
     self.mode = mode
     
+    self.activation_function = nn.GELU()
     
     #initializing the layers
     #first two layers of NN that are  general layers
@@ -87,10 +88,10 @@ class WorkYearBlock(nn.Module):
     torch.nn.init.xavier_uniform_(self.task_layer_h.weight)
 
  
-    self.task_a_w = TaskBlock(num_hidden_node=num_hidden_node, num_output=1)
+    self.task_a_w = TaskBlock(num_hidden_node=num_hidden_node, num_output=1, activation_funcion=self.activation_function)
 
     # # h is categorical with 4 categories and for the final result we will get mean of all the four output
-    self.task_h = TaskBlock(num_hidden_node=num_hidden_node, num_output=4)
+    self.task_h = TaskBlock(num_hidden_node=num_hidden_node, num_output=4, activation_funcion=self.activation_function)
 
 
 
@@ -103,12 +104,12 @@ class WorkYearBlock(nn.Module):
     
     if mode == 'early_retirement_year':
           
-          self.task_a_r = TaskBlock(num_hidden_node=num_hidden_node, num_output=1)
+          self.task_a_r = TaskBlock(num_hidden_node=num_hidden_node, num_output=1, activation_funcion=self.activation_function)
           
           #r fr fr  free (early_retirement 10)
           self.alpha_pr = alpha_pr
           
-          self.task_pr = TaskBlock(num_hidden_node=num_hidden_node, num_output=1)
+          self.task_pr = TaskBlock(num_hidden_node=num_hidden_node, num_output=1,  activation_funcion=self.activation_function)
       
     
     
@@ -189,7 +190,7 @@ class WorkYearBlock(nn.Module):
       
 
       pr = self.a_activation(self.alpha_pr * self.task_pr(x))
-      return x_h, x_x_w.squeeze(), pr, x_x_r.squeeze()
+      return x_h, x_x_w.squeeze(), pr.squeeze(), x_x_r.squeeze()
       
 
 
@@ -199,12 +200,12 @@ class WorkYearBlock(nn.Module):
   
 class RetirementYearBlock(nn.Module):
     
-    def __init__(self, num_hidden_unit = 5):
+    def __init__(self, num_hidden_unit = 5, year=75):
         super().__init__()
         
         # self.mode = mode
         
-        # self.year = year
+        self.year = year
         
         self.bn = nn.BatchNorm1d(2)
         
@@ -380,9 +381,9 @@ class Model(nn.Module):
     super().__init__()
 
     self.work_block = nn.ModuleDict({ f'year_{i}': WorkYearBlock(i - AGE_0+3, num_hidden_node = num_hidden_node_w) for i in range(AGE_0, T_ER) })
-    self.work_retirement_block = nn.ModuleDict({ f'year_{i}': EarlyRetiermentBlock(year=i, num_hidden_node_r=num_hidden_node_r, num_hidden_node_w= num_hidden_node_w, alpha_pr=alpha_pr ) for i in range(T_ER, T_LR) })
+    self.work_retirement_block = nn.ModuleDict({ f'year_{i}': EarlyRetiermentBlock(year=i, num_hidden_node_r=num_hidden_node_r, num_hidden_node_w= num_hidden_node_w, alpha_pr=alpha_pr ) for i in range(T_ER, T_LR+1) })
     #todo: for singel r block be aware you need to change hear too
-    self.retirement_block = nn.ModuleDict({ f'year_{i}': RetirementYearBlock(year=i) for i in range(T_LR, T_D+1) })
+    self.retirement_block = nn.ModuleDict({ f'year_{i}': RetirementYearBlock(year=i) for i in range(T_LR+1, T_D+1) })
 
 
 
@@ -465,23 +466,23 @@ class Model(nn.Module):
     #benefit if retire at age 62
     b_bar = torch.zeros_like(a_t)
     
-    all_pr_bar = torch.zeros(B, i_LR - i_ER+1)
-    all_pr = torch.zeros(B, i_LR - i_ER+1)
+    all_pr_bar = torch.zeros(B, i_LR - i_ER+1).to(device)
+    all_pr = torch.zeros(B, i_LR - i_ER+1).to(device)
     
     #index 0 for ww
     #index 1 for rw
     #index 2 for rr
-    all_c_ER = torch.zeros(B, i_LR - i_ER+1, 3)
+    all_c_ER = torch.zeros(B, i_LR - i_ER+1, 3).to(device)
 
     
     a_w_t = a_r_t = a_t
     
-    for i in range(i_ER, i_LR+1):
+    for i in range(i_ER, i_LR):
       # t_t = torch.ones_like(a_t) * (i+AGE_0)
       # benefit = retirement_benefit(all_y[:, :i], i - i_ER, 35)
 
       # f forward(self, theta, edu, a_t, all_y, w_t, b_t, pr_bar_t, b_bar_t):
-      
+
       outputs = self.work_retirement_block[f'year_{i+AGE_0}'](theta[:, i], edu, a_w_t,  a_r_t, all_y[:, :i,],all_w[:, i],  pr_bar, b_bar)
 
       #if we are retired (pr = 1) the working hour should be consider 0 in utility calculation
@@ -491,9 +492,9 @@ class Model(nn.Module):
  
       all_a[:, i+1] = outputs['a_tp']
       
-      all_c_ER[:, i, 0] = outputs['c_ww_t']
-      all_c_ER[:, i, 1] = outputs['c_rw_t']
-      all_c_ER[:, i, 2] = outputs['c_rr_t']
+      all_c_ER[:, i-i_ER, 0] = outputs['c_ww_t']
+      all_c_ER[:, i-i_ER, 1] = outputs['c_rw_t']
+      all_c_ER[:, i-i_ER, 2] = outputs['c_rr_t']
       
   
       
@@ -505,14 +506,33 @@ class Model(nn.Module):
       all_pr[:,i-i_ER] =  outputs['pr_t']
       
       
-      
     
     
+    
+    
+    
+    
+    #year 70
+    outputs = self.work_retirement_block[f'year_{i_LR+AGE_0}'](theta[:, i_LR-1], edu, a_w_t,  a_r_t, all_y[:, :i_LR,],all_w[:, i_LR-1],  pr_bar, b_bar)
+    
+    all_a[:, i_LR+1] = outputs['a_tp']
+    
+    
+    all_c_ER[:, i_LR-i_ER, 0] = 1e-8
+    all_c_ER[:, i_LR-i_ER, 1] = outputs['c_rw_t']
+    all_c_ER[:, i_LR-i_ER, 2] = outputs['c_rr_t']
+    
+    a_r_t = outputs['a_r_tp']
+    b_bar = outputs['b_bar_tp']
+    all_pr[:,i_LR-i_ER] =  1
+    
+  
+  
     
 
 
 
-    for i in range(i_LR, i_D):
+    for i in range(i_LR+1, i_D):
       
     
       
