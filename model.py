@@ -227,8 +227,8 @@ class RetirementYearBlock(nn.Module):
       x = torch.concat([a, b], dim = -1)
       x = self.bn(x)
       
-      x_ = self.layer_1(x)
-      x = self.activation_function(x_)
+      x = self.layer_1(x)
+      x = self.activation_function(x)
       
       x = self.layer_2(x)
       x = self.x_activation(x)
@@ -537,7 +537,7 @@ class Model(nn.Module):
     
       
       x_t = self.retirement_block[f'year_{i+AGE_0}'](a_r_t, b_bar)
-      c_t = (x_t *(b_bar + a_t)) + 1e-8
+      c_t = (x_t *(b_bar + a_r_t)) + 1e-8
   
       
       a_r_t =  ((1.0-x_t)*(b_bar + a_r_t)*(1+R))
