@@ -27,12 +27,17 @@ def dimension_corrector(func):
 
 class TaskBlock(nn.Module):
 
-  def __init__(self, num_hidden_node=10, num_output = 1, activation_funcion = nn.GELU()):
+  def __init__(self, num_hidden_node=10, num_output = 1, activation_funcion = nn.GELU(), task_layer = None):
     super().__init__()
         # third layer which is task specific layer, one for h and one for a
     # third layer which is task specific layer, one for h and one for a
-    self.task_layer = nn.Linear(num_hidden_node,num_hidden_node, bias=True)
-    torch.nn.init.xavier_uniform_(self.task_layer.weight)
+    
+    if not task_layer:
+      self.task_layer = nn.Linear(num_hidden_node,num_hidden_node, bias=True)
+      torch.nn.init.xavier_uniform_(self.task_layer.weight)
+    else:
+      self.task_layer = task_layer 
+    
     
     #forth layer that dedicated to year, again one for h and one for a
     self.year_layer= nn.Linear(num_hidden_node,num_output)
@@ -61,8 +66,17 @@ class TaskBlock(nn.Module):
 
 class WorkYearBlock(nn.Module):
 
-  def __init__(self, num_input=1, num_hidden_node = 10, mode = 'working_year', alpha_pr= 1):
+  def __init__(self, num_input=1, num_hidden_node = 10, mode = 'working_year', alpha_pr= 1, layers_dict=None):
     super().__init__()
+    
+    gen_2 = nn.Linear(num_hidden_node,num_hidden_node)
+    torch.nn.init.xavier_uniform_(gen_2.weight)
+
+    general_layer_2 = layers_dict['general2'] if 'general2' in layers_dict else gen_2
+    task_layer_h = layers_dict['task_h'] if 'task_h' in layers_dict else None
+    task_layer_a_w = layers_dict['task_aw'] if 'task_aw' in layers_dict else None
+    task_layer_a_r = layers_dict['task_ar'] if 'task_ar' in layers_dict else None
+    task_layer_pr = layers_dict['task_pr'] if 'task_pr' in layers_dict else None
     
     
     # if mode == "early_retirement_year":
@@ -80,18 +94,17 @@ class WorkYearBlock(nn.Module):
     torch.nn.init.xavier_uniform_(self.general_layer_1.weight)
 
 
-    self.general_layer_2 = nn.Linear(num_hidden_node,num_hidden_node)
-    torch.nn.init.xavier_uniform_(self.general_layer_2.weight)
+    self.general_layer_2 = general_layer_2
 
 
-    self.task_layer_h = nn.Linear(num_hidden_node,num_hidden_node, bias=True)
-    torch.nn.init.xavier_uniform_(self.task_layer_h.weight)
+
+
 
  
-    self.task_a_w = TaskBlock(num_hidden_node=num_hidden_node, num_output=1, activation_funcion=self.activation_function)
+    self.task_a_w = TaskBlock(num_hidden_node=num_hidden_node, num_output=1, activation_funcion=self.activation_function, task_layer=task_layer_a_w)
 
     # # h is categorical with 4 categories and for the final result we will get mean of all the four output
-    self.task_h = TaskBlock(num_hidden_node=num_hidden_node, num_output=4, activation_funcion=self.activation_function)
+    self.task_h = TaskBlock(num_hidden_node=num_hidden_node, num_output=4, activation_funcion=self.activation_function,task_layer=task_layer_h )
 
 
 
@@ -104,12 +117,12 @@ class WorkYearBlock(nn.Module):
     
     if mode == 'early_retirement_year':
           
-          self.task_a_r = TaskBlock(num_hidden_node=num_hidden_node, num_output=1, activation_funcion=self.activation_function)
+          self.task_a_r = TaskBlock(num_hidden_node=num_hidden_node, num_output=1, activation_funcion=self.activation_function, task_layer=task_layer_a_r)
           
           #r fr fr  free (early_retirement 10)
           self.alpha_pr = alpha_pr
           
-          self.task_pr = TaskBlock(num_hidden_node=num_hidden_node, num_output=1,  activation_funcion=self.activation_function)
+          self.task_pr = TaskBlock(num_hidden_node=num_hidden_node, num_output=1,  activation_funcion=self.activation_function, task_layer=task_layer_pr)
       
     
     
@@ -203,7 +216,7 @@ class RetirementYearBlock(nn.Module):
     def __init__(self, num_hidden_unit = 5, year=75):
         super().__init__()
         
-        # self.mode = mode
+
         
         self.year = year
         
@@ -215,7 +228,7 @@ class RetirementYearBlock(nn.Module):
         
         self.layer_2 = nn.Linear(num_hidden_unit, 1)
         torch.nn.init.xavier_uniform_(self.layer_2.weight)
-        # torch.nn.init.xavier_uniform_(self.layer_3.bias)
+
         
         
         self.activation_function = nn.GELU()
@@ -233,8 +246,7 @@ class RetirementYearBlock(nn.Module):
       x = self.layer_2(x)
       x = self.x_activation(x)
       
-      # if self.mode == 'early_retirement_year':
-      #   return x.squeeze(), x_
+
       
  
       
@@ -262,12 +274,12 @@ class RetirementYearBlock(nn.Module):
     
 class EarlyRetiermentBlock(nn.Module):
   
-      def __init__(self, year=61, num_hidden_node_w = 10, num_hidden_node_r = 5, alpha_pr = 1):
+      def __init__(self, year=61, num_hidden_node_w = 10, num_hidden_node_r = 5, alpha_pr = 1, layers_dict=None):
         super().__init__()
         
         assert (year >= 62) and (year<=70)
         
-        self.working_block = WorkYearBlock(num_input=year - AGE_0 + 3, num_hidden_node = num_hidden_node_w,  mode= 'early_retirement_year', alpha_pr=alpha_pr)
+        self.working_block = WorkYearBlock(num_input=year - AGE_0 + 3, num_hidden_node = num_hidden_node_w,  mode= 'early_retirement_year', alpha_pr=alpha_pr, layers_dict=layers_dict)
         self.retirement_block = RetirementYearBlock(num_hidden_unit=num_hidden_node_r, year=year)
         
         self.year= year
@@ -379,9 +391,26 @@ class Model(nn.Module):
 
 
     super().__init__()
-
-    self.work_block = nn.ModuleDict({ f'year_{i}': WorkYearBlock(i - AGE_0+3, num_hidden_node = num_hidden_node_w) for i in range(AGE_0, T_ER) })
-    self.work_retirement_block = nn.ModuleDict({ f'year_{i}': EarlyRetiermentBlock(year=i, num_hidden_node_r=num_hidden_node_r, num_hidden_node_w= num_hidden_node_w, alpha_pr=alpha_pr ) for i in range(T_ER, T_LR+1) })
+    
+    layers_dict= {}
+    layers_dict['general2'] = nn.Linear(num_hidden_node_w,num_hidden_node_w)
+    torch.nn.init.xavier_uniform_(layers_dict['general2'].weight)
+    
+    layers_dict['task_h'] = nn.Linear(num_hidden_node_w,num_hidden_node_w, bias=True)
+    torch.nn.init.xavier_uniform_(layers_dict['task_h'].weight)
+    
+    layers_dict['task_aw'] = nn.Linear(num_hidden_node_w,num_hidden_node_w, bias=True)
+    torch.nn.init.xavier_uniform_(layers_dict['task_aw'].weight)
+    
+    self.work_block = nn.ModuleDict({ f'year_{i}': WorkYearBlock(i - AGE_0+3, num_hidden_node = num_hidden_node_w, layers_dict=layers_dict) for i in range(AGE_0, T_ER) })
+    
+    layers_dict['task_ar'] = nn.Linear(num_hidden_node_w,num_hidden_node_w, bias=True)
+    torch.nn.init.xavier_uniform_(layers_dict['task_ar'].weight)
+    layers_dict['task_pr'] = nn.Linear(num_hidden_node_w,num_hidden_node_w, bias=True)
+    torch.nn.init.xavier_uniform_(layers_dict['task_pr'].weight)
+    
+    
+    self.work_retirement_block = nn.ModuleDict({ f'year_{i}': EarlyRetiermentBlock(year=i, num_hidden_node_r=num_hidden_node_r, num_hidden_node_w= num_hidden_node_w, alpha_pr=alpha_pr , layers_dict = layers_dict) for i in range(T_ER, T_LR+1) })
     #todo: for singel r block be aware you need to change hear too
     self.retirement_block = nn.ModuleDict({ f'year_{i}': RetirementYearBlock(year=i) for i in range(T_LR+1, T_D+1) })
 
