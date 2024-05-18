@@ -306,8 +306,8 @@ class EarlyRetiermentBlock(nn.Module):
         #calculating a_ww a_rw a_rr
         
         #to do tax 
-        c_ww_t = x_ww * (y_t - social_security_tax(y_t) + a_w_t) + 1e-8
-        a_ww_tp = (1.0 - x_ww)*((y_t) - social_security_tax(y_t) + a_w_t)* (1+R) 
+        c_ww_t = x_ww * (y_t -income_tax(y_t) - social_security_tax(y_t) + a_w_t) + 1e-8
+        a_ww_tp = (1.0 - x_ww)*((y_t) -income_tax(y_t)- social_security_tax(y_t) + a_w_t)* (1+R) 
         
         b_t = retirement_benefit(all_y, self.year - T_ER, 35)
         
@@ -455,8 +455,8 @@ class Model(nn.Module):
     #using the block for the first year, predicting a_2 and h_1
     h_t, x_t = self.work_block[f'year_22'](theta[:, 0], edu, a_1) 
     y_t = all_w[:,0] * h_t
-    a_t = (1.0-x_t)*(y_t - social_security_tax(y_t)+ a_1)*(1+R)
-    c_t = (x_t)*(y_t - social_security_tax(y_t)+ a_1)+1e-8
+    a_t = (1.0-x_t)*(y_t - income_tax(y_t) - social_security_tax(y_t)+ a_1)*(1+R)
+    c_t = (x_t)*(y_t - income_tax(y_t) - social_security_tax(y_t)+ a_1)+1e-8
     
     
     
@@ -476,8 +476,8 @@ class Model(nn.Module):
       
       
       y_t = all_w[:,i] * h_t
-      all_c[:, i] = (x_t)*(y_t - social_security_tax(y_t)+ a_t) +1e-8
-      a_t = (1.0 -x_t)*((y_t) - social_security_tax(y_t) + a_t)* (1+R) 
+      all_c[:, i] = (x_t)*(y_t -income_tax(y_t) - social_security_tax(y_t)+ a_t) +1e-8
+      a_t = (1.0 -x_t)*((y_t) -income_tax(y_t) - social_security_tax(y_t) + a_t)* (1+R) 
       all_y[:, i] = y_t
       all_h[:, i] = h_t
       all_a[:,i+1] = a_t
