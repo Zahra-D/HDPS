@@ -22,7 +22,7 @@ import time
 # List of hyperparameter sets
 
 
-phis = [1, 0,  .1, .001, ]
+phis = [1 ]
 alphas = [1,10, 1000]
 hyperparameter_sets = []
 for phi in phis:

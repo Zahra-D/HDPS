@@ -75,9 +75,9 @@ from model import Model
 device = 'cuda'
 epoch = 999
 
-for alpha in [1000]:
-    for phi in [0, 0.1, .001, 1]:
-        
+for alpha in [1, 10,1000]:
+    for phi in [1,0,.1,.001]:
+
         base_dir  = f'/home/zdelbari/zdelbari/HDPS/HDPS/Experiments/multiple_r--alpha_pr_{alpha}--phi_{phi}/base_model_with_regu_wb_each10_10HiddenUnits_seed92_phi{phi}/10000_batch_size/PSI0.04/lambda0.01/AdamW_lr:0.001'
         model = torch.load(f'{base_dir}/model/epoch{epoch}/model.pt')
         model.to(device)
@@ -91,13 +91,22 @@ for alpha in [1000]:
         Histograms_Individual_Ages(all_h, all_edu, 'Workhour', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
         Histograms_Individual_Ages(all_y, all_edu, 'Income', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
         
-        plot_trend(all_a, all_edu, None, 'Asset', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
-        plot_trend(all_c, all_edu, None, 'Consumption', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
-        plot_trend(all_h, all_edu, None, 'Workhour', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
-        plot_trend(all_y, all_edu, None, 'Income', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
+        plot_trend(all_a, all_edu, None, 'Asset',func='median', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
+        plot_trend(all_c, all_edu, None, 'Consumption',func='median', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
+        plot_trend(all_h, all_edu, None, 'Workhour',func='median', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
+        plot_trend(all_y, all_edu, None, 'Income' ,func='median', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
+        plot_trend(all_a, all_edu, None, 'Asset',func='mean', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
+        plot_trend(all_c, all_edu, None, 'Consumption',func='mean', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
+        plot_trend(all_h, all_edu, None, 'Workhour',func='mean', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
+        plot_trend(all_y, all_edu, None, 'Income',func='mean', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
                 
         policy_function_plot_asset(model, all_edu, 'workhour', all_a, all_w,  plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
         policy_function_plot_asset(model, all_edu, 'Asset', all_a, all_w,  plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
+        policy_function_plot_asset(model, all_edu, 'Ratio', all_a, all_w,  plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
+        
+        policy_function_plot_wage(model, all_edu, 'workhour', all_a, all_w,  plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
+        policy_function_plot_wage(model, all_edu, 'Asset', all_a, all_w,  plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
+        policy_function_plot_wage(model, all_edu, 'Ratio', all_a, all_w,  plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
 
 
 

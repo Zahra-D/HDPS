@@ -62,10 +62,11 @@ def Histograms_Individual_Ages(data, edu, type, plots_base_dir = None, epoch = N
         return 
     # plt.show()
     
+
     
     
     
-def plot_trend(data, edu, mask_retirement, type, plots_base_dir= None, epoch = None, save = False):
+def plot_trend(data, edu, mask_retirement, type, func,plots_base_dir= None, epoch = None, save = False):
     
     plt.figure(figsize=(15,7))
     
@@ -80,16 +81,20 @@ def plot_trend(data, edu, mask_retirement, type, plots_base_dir= None, epoch = N
     #     plt.xticks(AGE_0, T_LR+1)
 
     # elif type in ['Consumption', 'Asset']:
-    plt.plot( range(AGE_0, len(data[0]) + AGE_0), data[edu > 0].median(dim=0).values, color='skyblue', label='edu = 1')
-    plt.plot( range(AGE_0, len(data[0]) + AGE_0), data[edu <= 0].median(dim=0).values, color='orange', label='edu = 0')
-        # plt.xticks())
+    if func == 'median':
+        plt.plot( range(AGE_0, len(data[0]) + AGE_0), data[edu > 0].median(dim=0).values, color='skyblue', label='edu = 1')
+        plt.plot( range(AGE_0, len(data[0]) + AGE_0), data[edu <= 0].median(dim=0).values, color='orange', label='edu = 0')
+            # plt.xticks())
+    elif func == 'mean':
+        plt.plot( range(AGE_0, len(data[0]) + AGE_0), data[edu > 0].mean(dim=0), color='skyblue', label='edu = 1')
+        plt.plot( range(AGE_0, len(data[0]) + AGE_0), data[edu <= 0].mean(dim=0), color='orange', label='edu = 0')
     
     plt.legend()
     plt.title(f'Trend of {type}') 
     if save:
         dir_save = f'{plots_base_dir}/epoch{epoch}/trend'
         pathlib.Path(dir_save).mkdir(parents=True, exist_ok=True)
-        plt.savefig(f'{dir_save}/trend_{type}.png')
+        plt.savefig(f'{dir_save}/trend_{type}_{func}.png')
         plt.close()
         
         
@@ -153,8 +158,8 @@ def policy_function_plot(model, edu, type, all_a, all_theta,  plots_base_dir, ep
     
 def inverse_wage(wage, t, edu):
     
-    if wage <= w_min:
-        return 'w_min: not inversable'
+    # if wage <= w_min:
+    #     return 'w_min: not inversable'
     u = mu(edu, t)
     theta = torch.log(wage) - u
     return theta
@@ -233,7 +238,29 @@ def policy_function_plot_asset(model, edu, type, all_a, all_w,  plots_base_dir= 
             
             ylabel = 'work hour t'
         
+                    
+        elif type=='Ratio':
             
+            y1_1 = h1_1 * w_q1_1
+            y2_1 = h2_1 * w_q2_1
+            y3_1 = h3_1 * w_q3_1
+            
+            y1_0 = h1_0 * w_q1_0
+            y2_0 = h2_0 * w_q2_0
+            y3_0 = h3_0 * w_q3_0
+        
+        
+            curve1_1 = ((y1_1) - social_security_tax(y1_1) + generated_a_1)
+            curve2_1 = ((y2_1) - social_security_tax(y2_1) + generated_a_1) 
+            curve3_1 = ((y3_1) - social_security_tax(y3_1) + generated_a_1) 
+            
+            
+            
+            curve1_0 = ((y1_0) - social_security_tax(y1_0) + generated_a_0)
+            curve2_0 = ((y2_0) - social_security_tax(y2_0) + generated_a_0)
+            curve3_0 = ((y3_0) - social_security_tax(y3_0) + generated_a_0)
+        
+            ylabel = 'Ratio'    
             
             
         elif type=='Asset':
@@ -261,18 +288,18 @@ def policy_function_plot_asset(model, edu, type, all_a, all_w,  plots_base_dir= 
 
         
         
-        ax[1][i].plot(generated_a_1.detach().cpu(), curve1_1.detach().cpu(), color='skyblue', label='edu = 1, q=1')
-        ax[1][i].plot(generated_a_1.detach().cpu(), curve2_1.detach().cpu(), color='orange', label='edu = 1, q=2')
-        ax[1][i].plot(generated_a_1.detach().cpu(), curve3_1.detach().cpu(), color='pink', label='edu = 1, q=3')
+        ax[1][i].plot(generated_a_1.detach().cpu(), curve1_1.detach().cpu(), color='skyblue', label=f'edu = 1, qw1={w_q1_1:.2f}')
+        ax[1][i].plot(generated_a_1.detach().cpu(), curve2_1.detach().cpu(), color='orange', label=f'edu = 1, qw2={w_q2_1:.2f}')
+        ax[1][i].plot(generated_a_1.detach().cpu(), curve3_1.detach().cpu(), color='pink', label=f'edu = 1, qw3={w_q3_1:.2f}')
         ax[1][i].legend()
         ax[1][i].set_title(f'{age} edu= 1')
         ax[1][i].set_xlabel(f'Asset t')
         ax[1][i].set_ylabel(ylabel)
         
 
-        ax[0][i].plot(generated_a_0.detach().cpu(), curve1_0.detach().cpu(), color='skyblue', label='edu = 0, q=1')
-        ax[0][i].plot(generated_a_0.detach().cpu(), curve2_0.detach().cpu(), color='orange', label='edu = 0, q=2')
-        ax[0][i].plot(generated_a_0.detach().cpu(), curve3_0.detach().cpu(), color='pink', label='edu = 0, q=3')
+        ax[0][i].plot(generated_a_0.detach().cpu(), curve1_0.detach().cpu(), color='skyblue', label=f'edu = 0, qw1={w_q1_0:.2f}')
+        ax[0][i].plot(generated_a_0.detach().cpu(), curve2_0.detach().cpu(), color='orange', label=f'edu = 0, qw2={w_q2_0:.2f}')
+        ax[0][i].plot(generated_a_0.detach().cpu(), curve3_0.detach().cpu(), color='pink', label=f'edu = 0, qw3={w_q3_0:.2f}')
         ax[0][i].legend()
         ax[0][i].set_title(f'{age} edu= 0')
         ax[0][i].set_xlabel(f'Asset t')
@@ -289,7 +316,170 @@ def policy_function_plot_asset(model, edu, type, all_a, all_w,  plots_base_dir= 
     
     
     
+       
     
+def policy_function_plot_wage(model, edu, type, all_a, all_w,  plots_base_dir= None, epoch= None, save=False):
+    
+    device = 'cuda'
+    
+    fig, ax = plt.subplots(2, 3, figsize=(24,10))
+    for i, age in enumerate([25, 40, 55]):
+
+            
+        sigma_1 = all_w[edu>0][:,age - AGE_0].std()
+        sigma_0 = all_w[edu<=0][:,age - AGE_0].std()
+        
+        mean_1 = all_w[edu>0][:,age - AGE_0].mean()
+        mean_0 = all_w[edu<=0][:,age - AGE_0].mean()
+        
+        a_q1_1 = all_a[edu>0][:,age - AGE_0].quantile(.25).to(device)
+        # t_q1_1 = inverse_wage(w_q1_1, age, 1)
+        a_q1_0 = all_a[edu<=0][:,age - AGE_0].quantile(.25).to(device)
+        # t_q1_0 = inverse_wage(w_q1_0, age, 0)
+        
+        a_q2_1 = all_a[edu>0][:,age - AGE_0].quantile(.5).to(device)
+        # t_q2_1 = inverse_wage(w_q2_1, age, 1)
+        a_q2_0 = all_a[edu<=0][:,age - AGE_0].quantile(.5).to(device)
+        # t_q2_0 = inverse_wage(w_q2_0, age, 0)
+        
+        a_q3_1 = all_a[edu>0][:,age - AGE_0].quantile(.75).to(device)
+        # t_q3_1 = inverse_wage(w_q3_1, age, 1)
+        a_q3_0 = all_a[edu<=0][:,age - AGE_0].quantile(.75).to(device)
+        # t_q3_0 = inverse_wage(w_q3_0, age, 0)
+        
+        
+        
+        
+        
+        y = (torch.ones((1000, age - AGE_0)) * 50000).to(device)
+        
+        
+        generated_w_1 = torch.arange(mean_1 - 2*sigma_1, mean_1 + 2 * sigma_1, 4 * sigma_1 /1000 ).to(device)[:1000]
+        if mean_1 - 2*sigma_1 < w_min:
+            generated_w_1 = torch.arange(w_min, mean_1 + 2 * sigma_1,(mean_1 + 2 * sigma_1 - w_min) /1000 ).to(device)[:1000]
+        generated_th_1 = inverse_wage(generated_w_1, age, 1)
+        
+        generated_w_0 = torch.arange(mean_0 - 2 * sigma_0, mean_0 + 2 * sigma_0, 4 * sigma_0 /1000 ).to(device)[:1000]
+        if mean_0 - 2*sigma_0 < w_min:
+            generated_w_0 = torch.arange(w_min, mean_0 + 2 * sigma_0,(mean_0 + 2 * sigma_0 - w_min) /1000 ).to(device)[:1000]
+        generated_th_0 = inverse_wage(generated_w_0, age, 0)
+        
+        if age <= T_LR:
+            block = model.work_block[f'year_{age}']
+        else:
+            block = model.RetirementYearBlock
+        
+        
+        h1_1, x1_1 = block(generated_th_1.to(device), torch.ones((1000,1)).to(device), a_q1_1 * torch.ones((1000,1)).to(device) , y )
+        h2_1, x2_1 = block(generated_th_1.to(device), torch.ones((1000,1)).to(device), a_q2_1 * torch.ones((1000,1)).to(device) , y )
+        h3_1, x3_1 = block(generated_th_1.to(device), torch.ones((1000,1)).to(device), a_q3_1 * torch.ones((1000,1)).to(device) , y )
+        
+        
+        
+        h1_0, x1_0 = block(generated_th_0.to(device),  torch.zeros((1000,1)).to(device), a_q1_0 * torch.ones((1000,1)).to(device), y )
+        h2_0, x2_0 = block(generated_th_0.to(device),  torch.zeros((1000,1)).to(device), a_q2_0 * torch.ones((1000,1)).to(device), y )
+        h3_0, x3_0 = block(generated_th_0.to(device),  torch.zeros((1000,1)).to(device), a_q3_0 * torch.ones((1000,1)).to(device), y )
+        
+        
+        
+        
+        
+        if type=='workhour':
+            
+            curve1_1 = h1_1
+            curve2_1 = h2_1 
+            curve3_1 = h3_1
+            
+            
+            curve1_0 = h1_0
+            curve2_0 = h2_0
+            curve3_0 = h3_0
+            
+            ylabel = 'work hour t'
+        
+            
+            
+            
+        elif type=='Asset':
+            
+            y1_1 = h1_1 * generated_w_1
+            y2_1 = h2_1 * generated_w_1
+            y3_1 = h3_1 * generated_w_1
+            
+            y1_0 = h1_0 * generated_w_0
+            y2_0 = h2_0 * generated_w_0
+            y3_0 = h3_0 * generated_w_0
+        
+        
+            curve1_1 = (1.0 -x1_1.squeeze())*((y1_1) - social_security_tax(y1_1) + a_q1_1)* (1+R) 
+            curve2_1 = (1.0 -x2_1.squeeze())*((y2_1) - social_security_tax(y2_1) + a_q2_1)* (1+R) 
+            curve3_1 = (1.0 -x3_1.squeeze())*((y3_1) - social_security_tax(y3_1) + a_q3_1)* (1+R) 
+            
+            
+            
+            curve1_0 = (1.0 -x1_0.squeeze())*((y1_0) - social_security_tax(y1_0) + a_q1_0)* (1+R) 
+            curve2_0 = (1.0 -x2_0.squeeze())*((y2_0) - social_security_tax(y2_0) + a_q2_0)* (1+R) 
+            curve3_0 = (1.0 -x3_0.squeeze())*((y3_0) - social_security_tax(y3_0) + a_q3_0)* (1+R) 
+        
+            ylabel = 'Asset t+1'
+            
+            
+            
+        elif type=='Ratio':
+            
+            y1_1 = h1_1 * generated_w_1
+            y2_1 = h2_1 * generated_w_1
+            y3_1 = h3_1 * generated_w_1
+            
+            y1_0 = h1_0 * generated_w_0
+            y2_0 = h2_0 * generated_w_0
+            y3_0 = h3_0 * generated_w_0
+        
+        
+            curve1_1 = ((y1_1) - social_security_tax(y1_1) + a_q1_1)
+            curve2_1 = ((y2_1) - social_security_tax(y2_1) + a_q2_1)
+            curve3_1 = ((y3_1) - social_security_tax(y3_1) + a_q3_1)
+            
+            
+            
+            curve1_0 = ((y1_0) - social_security_tax(y1_0) + a_q1_0)
+            curve2_0 =((y2_0) - social_security_tax(y2_0) + a_q2_0) 
+            curve3_0 = ((y3_0) - social_security_tax(y3_0) + a_q3_0)
+        
+            ylabel = 'Ratio'
+
+        
+        
+        ax[1][i].plot(generated_w_1.detach().cpu(), curve1_1.detach().cpu(), color='skyblue', label=f'edu = 1, qa1 = {a_q1_1:.2f}')
+        ax[1][i].plot(generated_w_1.detach().cpu(), curve2_1.detach().cpu(), color='orange', label=f'edu = 1, qa2= {a_q2_1:.2f}')
+        ax[1][i].plot(generated_w_1.detach().cpu(), curve3_1.detach().cpu(), color='pink', label=f'edu = 1, qa3= {a_q3_1:.2f}')
+        ax[1][i].legend()
+        ax[1][i].set_title(f'{age} edu= 1')
+        ax[1][i].set_xlabel(f'Wage t')
+        ax[1][i].set_ylabel(ylabel)
+        
+
+        ax[0][i].plot(generated_w_0.detach().cpu(), curve1_0.detach().cpu(), color='skyblue', label=f'edu = 0, qa1={a_q1_0:.2f}')
+        ax[0][i].plot(generated_w_0.detach().cpu(), curve2_0.detach().cpu(), color='orange', label=f'edu = 0, qa2= {a_q2_0:.2f}')
+        ax[0][i].plot(generated_w_0.detach().cpu(), curve3_0.detach().cpu(), color='pink', label=f'edu = 0, q3 = {a_q3_0:.2f}')
+        ax[0][i].legend()
+        ax[0][i].set_title(f'{age} edu= 0')
+        ax[0][i].set_xlabel(f'Wage t')
+        ax[0][i].set_ylabel(ylabel)
+        
+        
+        if save:
+            dir_save = f'{plots_base_dir}/epoch{epoch}/policy'
+            pathlib.Path(dir_save).mkdir(parents=True, exist_ok=True)
+            fig.savefig(f'{dir_save}/policy_function_{type}_vs_wage.png')
+            plt.close()
+    
+    # plt.plot(a_t_1, a_t)
+    
+    
+    
+    
+  
     
     
        
