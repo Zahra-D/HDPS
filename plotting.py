@@ -73,12 +73,12 @@ def do_eval_save(model, dataloader, device):
     
 from model import Model
 device = 'cuda'
-epoch = 999
+epoch = 700
 
-for alpha in [1, 10,1000]:
-    for phi in [0,.1,.001]:
+for alpha in [1,10,100, 1000]:
+    for phi in  [.0001, .00001, 0.0005, 0.00005 ]:
 
-        base_dir  = f'/home/zdelbari/zdelbari/HDPS/HDPS/Experiments/multiple_r--with_tax--alpha_pr_{alpha}--phi_{phi}/base_model_with_regu_wb_each10_10HiddenUnits_seed92_phi{phi}/10000_batch_size/PSI0.04/lambda0.01/AdamW_lr:0.001'
+        base_dir  = f'/home/zdelbari/zdelbari/HDPS/HDPS/Experiments/multiple_r--with_tax--increace_Wage300--alpha_pr_{alpha}--phi_{phi}/base_model_with_regu_wb_each10_10HiddenUnits_seed92_phi{phi}/10000_batch_size/PSI0.04/lambda0.01/AdamW_lr:0.001'
         model = torch.load(f'{base_dir}/model/epoch{epoch}/model.pt')
         model.to(device)
         

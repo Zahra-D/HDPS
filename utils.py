@@ -189,23 +189,25 @@ def utility_retirement_pr(c_t, c_t_ER, pr_bar, pr_t, h_t, epoch, s_writer, args,
   
 
 
-  utility_ww = utility(c_t_ER[:,:, 0], h_t[:,i_ER: i_LR +1], BETA_t[i_ER: i_LR+1], args)
-  utility_rw = utility(c_t_ER[:,:, 1], dummy_h, BETA_t[i_ER: i_LR+1], args)
-  utility_rr = utility(c_t_ER[:,:, 2], dummy_h, BETA_t[i_ER: i_LR+1], args)
+  utility_ww = utility(c_t_ER[:,:, 0], h_t[:,i_ER: i_LR +1], BETA_t[i_ER: i_LR+1],  args.phi, args.psi)
+  utility_rw = utility(c_t_ER[:,:, 1], dummy_h, BETA_t[i_ER: i_LR+1],  args.phi, args.psi)
+  utility_rr = utility(c_t_ER[:,:, 2], dummy_h, BETA_t[i_ER: i_LR+1],  args.phi, args.psi)
   utility_LR = (1-pr_bar) * ( (1-pr_t) * utility_ww + pr_t * utility_rw )  +  pr_bar * (utility_rr)
   
 
-  utility_D = utility(c_t[:,i_LR+1:], h_t[:,i_LR+1:], BETA_t[i_LR+1:],  args)
+  utility_D = utility(c_t[:,i_LR+1:], h_t[:,i_LR+1:], BETA_t[i_LR+1:],   args.phi, args.psi)
   total_utility =  utility_ER.sum(dim=-1) + utility_LR.sum(dim=-1) + utility_D.sum(dim=-1)
 
   return  total_utility
 
 
-def utility(c_t, h_t,BETA_t, args):
+def utility(c_t, h_t,BETA_t, phi,psi ):
   consumption_utility =  (c_t**(1-GAMMA))/(1-GAMMA)
   work_hour_disutility = ((h_t/H[-1]) ** (1+1/ETA))/(1+1/ETA)
+  
+  # if flag:
   working_disutility =  (h_t > 0).int()
-  utility = (BETA_t * (consumption_utility - args.phi * working_disutility - args.psi * work_hour_disutility))
+  utility = (BETA_t * (consumption_utility - phi * working_disutility - psi * work_hour_disutility))
   return utility
 
   

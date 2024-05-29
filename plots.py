@@ -250,15 +250,15 @@ def policy_function_plot_asset(model, edu, type, all_a, all_w,  plots_base_dir= 
             y3_0 = h3_0 * w_q3_0
         
         
-            curve1_1 = ((y1_1) - social_security_tax(y1_1) + generated_a_1)
-            curve2_1 = ((y2_1) - social_security_tax(y2_1) + generated_a_1) 
-            curve3_1 = ((y3_1) - social_security_tax(y3_1) + generated_a_1) 
+            curve1_1 = ((y1_1) - social_security_tax(y1_1) - income_tax(y1_1) + generated_a_1)
+            curve2_1 = ((y2_1) - social_security_tax(y2_1) - income_tax(y2_1) + generated_a_1) 
+            curve3_1 = ((y3_1) - social_security_tax(y3_1) - income_tax(y3_1) + generated_a_1) 
             
             
             
-            curve1_0 = ((y1_0) - social_security_tax(y1_0) + generated_a_0)
-            curve2_0 = ((y2_0) - social_security_tax(y2_0) + generated_a_0)
-            curve3_0 = ((y3_0) - social_security_tax(y3_0) + generated_a_0)
+            curve1_0 = ((y1_0) - social_security_tax(y1_0) - income_tax(y1_0) + generated_a_0)
+            curve2_0 = ((y2_0) - social_security_tax(y2_0) - income_tax(y2_0) + generated_a_0)
+            curve3_0 = ((y3_0) - social_security_tax(y3_0) - income_tax(y3_0) + generated_a_0)
         
             ylabel = 'Ratio'    
             
@@ -274,15 +274,15 @@ def policy_function_plot_asset(model, edu, type, all_a, all_w,  plots_base_dir= 
             y3_0 = h3_0 * w_q3_0
         
         
-            curve1_1 = (1.0 -x1_1.squeeze())*((y1_1) - social_security_tax(y1_1) + generated_a_1)* (1+R) 
-            curve2_1 = (1.0 -x2_1.squeeze())*((y2_1) - social_security_tax(y2_1) + generated_a_1)* (1+R) 
-            curve3_1 = (1.0 -x3_1.squeeze())*((y3_1) - social_security_tax(y3_1) + generated_a_1)* (1+R) 
+            curve1_1 = (1.0 -x1_1.squeeze())*((y1_1) - social_security_tax(y1_1) - income_tax(y1_1) + generated_a_1)* (1+R) 
+            curve2_1 = (1.0 -x2_1.squeeze())*((y2_1) - social_security_tax(y2_1) - income_tax(y2_1) + generated_a_1)* (1+R) 
+            curve3_1 = (1.0 -x3_1.squeeze())*((y3_1) - social_security_tax(y3_1) - income_tax(y3_1) + generated_a_1)* (1+R) 
             
             
             
-            curve1_0 = (1.0 -x1_0.squeeze())*((y1_0) - social_security_tax(y1_0) + generated_a_0)* (1+R) 
-            curve2_0 = (1.0 -x2_0.squeeze())*((y2_0) - social_security_tax(y2_0) + generated_a_0)* (1+R) 
-            curve3_0 = (1.0 -x3_0.squeeze())*((y3_0) - social_security_tax(y3_0) + generated_a_0)* (1+R) 
+            curve1_0 = (1.0 -x1_0.squeeze())*((y1_0) - social_security_tax(y1_0) - income_tax(y1_0) + generated_a_0)* (1+R) 
+            curve2_0 = (1.0 -x2_0.squeeze())*((y2_0) - social_security_tax(y2_0) - income_tax(y2_0) + generated_a_0)* (1+R) 
+            curve3_0 = (1.0 -x3_0.squeeze())*((y3_0) - social_security_tax(y3_0) - income_tax(y3_0) + generated_a_0)* (1+R) 
         
             ylabel = 'Asset t+1'
 
@@ -411,15 +411,15 @@ def policy_function_plot_wage(model, edu, type, all_a, all_w,  plots_base_dir= N
             y3_0 = h3_0 * generated_w_0
         
         
-            curve1_1 = (1.0 -x1_1.squeeze())*((y1_1) - social_security_tax(y1_1) + a_q1_1)* (1+R) 
-            curve2_1 = (1.0 -x2_1.squeeze())*((y2_1) - social_security_tax(y2_1) + a_q2_1)* (1+R) 
-            curve3_1 = (1.0 -x3_1.squeeze())*((y3_1) - social_security_tax(y3_1) + a_q3_1)* (1+R) 
+            curve1_1 = (1.0 -x1_1.squeeze())*((y1_1) - social_security_tax(y1_1) - income_tax(y1_1) + a_q1_1)* (1+R) 
+            curve2_1 = (1.0 -x2_1.squeeze())*((y2_1) - social_security_tax(y2_1) - income_tax(y2_1) + a_q2_1)* (1+R) 
+            curve3_1 = (1.0 -x3_1.squeeze())*((y3_1) - social_security_tax(y3_1) - income_tax(y3_1) + a_q3_1)* (1+R) 
             
             
             
-            curve1_0 = (1.0 -x1_0.squeeze())*((y1_0) - social_security_tax(y1_0) + a_q1_0)* (1+R) 
-            curve2_0 = (1.0 -x2_0.squeeze())*((y2_0) - social_security_tax(y2_0) + a_q2_0)* (1+R) 
-            curve3_0 = (1.0 -x3_0.squeeze())*((y3_0) - social_security_tax(y3_0) + a_q3_0)* (1+R) 
+            curve1_0 = (1.0 -x1_0.squeeze())*((y1_0) - social_security_tax(y1_0) - income_tax(y1_0) + a_q1_0)* (1+R) 
+            curve2_0 = (1.0 -x2_0.squeeze())*((y2_0) - social_security_tax(y2_0) - income_tax(y2_0) + a_q2_0)* (1+R) 
+            curve3_0 = (1.0 -x3_0.squeeze())*((y3_0) - social_security_tax(y3_0) - income_tax(y3_0) + a_q3_0)* (1+R) 
         
             ylabel = 'Asset t+1'
             
@@ -436,15 +436,15 @@ def policy_function_plot_wage(model, edu, type, all_a, all_w,  plots_base_dir= N
             y3_0 = h3_0 * generated_w_0
         
         
-            curve1_1 = ((y1_1) - social_security_tax(y1_1) + a_q1_1)
-            curve2_1 = ((y2_1) - social_security_tax(y2_1) + a_q2_1)
-            curve3_1 = ((y3_1) - social_security_tax(y3_1) + a_q3_1)
+            curve1_1 = ((y1_1) - social_security_tax(y1_1) - income_tax(y1_1) + a_q1_1)
+            curve2_1 = ((y2_1) - social_security_tax(y2_1) - income_tax(y2_1) + a_q2_1)
+            curve3_1 = ((y3_1) - social_security_tax(y3_1) - income_tax(y3_1) + a_q3_1)
             
             
             
-            curve1_0 = ((y1_0) - social_security_tax(y1_0) + a_q1_0)
-            curve2_0 =((y2_0) - social_security_tax(y2_0) + a_q2_0) 
-            curve3_0 = ((y3_0) - social_security_tax(y3_0) + a_q3_0)
+            curve1_0 = ((y1_0) - social_security_tax(y1_0) - income_tax(y1_0) + a_q1_0)
+            curve2_0 = ((y2_0) - social_security_tax(y2_0) - income_tax(y2_0) + a_q2_0) 
+            curve3_0 = ((y3_0) - social_security_tax(y3_0) - income_tax(y3_0) + a_q3_0)
         
             ylabel = 'Ratio'
 
@@ -570,15 +570,15 @@ def policy_function_plot_assetx(model, edu, type, all_a, all_w,  plots_base_dir=
             y3_0 = h3_0 * w_q3_0
         
         
-            curve1_1 = (1.0 -x1_1.squeeze())*((y1_1) - social_security_tax(y1_1) + generated_a_1)* (1+R) 
-            curve2_1 = (1.0 -x2_1.squeeze())*((y2_1) - social_security_tax(y2_1) + generated_a_1)* (1+R) 
-            curve3_1 = (1.0 -x3_1.squeeze())*((y3_1) - social_security_tax(y3_1) + generated_a_1)* (1+R) 
+            curve1_1 = (1.0 -x1_1.squeeze())*((y1_1) - social_security_tax(y1_1) - income_tax(y1_1) + generated_a_1)* (1+R) 
+            curve2_1 = (1.0 -x2_1.squeeze())*((y2_1) - social_security_tax(y2_1) - income_tax(y2_1) + generated_a_1)* (1+R) 
+            curve3_1 = (1.0 -x3_1.squeeze())*((y3_1) - social_security_tax(y3_1) - income_tax(y3_1) + generated_a_1)* (1+R) 
             
             
             
-            curve1_0 = (1.0 -x1_0.squeeze())*((y1_0) - social_security_tax(y1_0) + generated_a_0)* (1+R) 
-            curve2_0 = (1.0 -x2_0.squeeze())*((y2_0) - social_security_tax(y2_0) + generated_a_0)* (1+R) 
-            curve3_0 = (1.0 -x3_0.squeeze())*((y3_0) - social_security_tax(y3_0) + generated_a_0)* (1+R) 
+            curve1_0 = (1.0 -x1_0.squeeze())*((y1_0) - social_security_tax(y1_0) - income_tax(y1_0) + generated_a_0)* (1+R) 
+            curve2_0 = (1.0 -x2_0.squeeze())*((y2_0) - social_security_tax(y2_0) - income_tax(y2_0) + generated_a_0)* (1+R) 
+            curve3_0 = (1.0 -x3_0.squeeze())*((y3_0) - social_security_tax(y3_0) - income_tax(y3_0) + generated_a_0)* (1+R) 
         
             ylabel = 'Asset t+1'
 

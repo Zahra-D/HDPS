@@ -28,7 +28,7 @@ def train_step(model, dataloader, epoch, s_writer, optimizer, device, args):
         
         a_1 = torch.tensor([A_1]* len_batch, dtype=torch.float32)
 
-        
+        w_t_[:, 40:] = w_t_[:, 40:] + 300
         optimizer.zero_grad()
         all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y = model(theta_t_.to(device), edu_.to(device), a_1.to(device),w_t_)
         
