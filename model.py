@@ -112,6 +112,7 @@ class WorkYearBlock(nn.Module):
     # activation function, we can use a single ReLU wherever it is needed.
 
     self.a_activation = nn.Sigmoid()
+    self.gumbel = F.gumbel_softmax
     self.h = torch.tensor([0.0,1300.0,2080.0,2860.0])
     
     
@@ -122,7 +123,7 @@ class WorkYearBlock(nn.Module):
           #r fr fr  free (early_retirement 10)
           self.alpha_pr = alpha_pr
           
-          self.task_pr = TaskBlock(num_hidden_node=num_hidden_node, num_output=1,  activation_funcion=self.activation_function, task_layer=task_layer_pr)
+          self.task_pr = TaskBlock(num_hidden_node=num_hidden_node, num_output=2,  activation_funcion=self.activation_function, task_layer=task_layer_pr)
       
     
     
@@ -201,9 +202,9 @@ class WorkYearBlock(nn.Module):
       x_x_r = self.task_a_r(x)
       x_x_r = self.a_activation(x_x_r)
       
-
-      pr = self.a_activation(self.alpha_pr * self.task_pr(x))
-      return x_h, x_x_w.squeeze(), pr.squeeze(), x_x_r.squeeze()
+      pr = self.gumbel(self.task_pr(x), hard=True)
+      # pr = self.a_activation(self.alpha_pr * self.task_pr(x))
+      return x_h, x_x_w.squeeze(), pr, x_x_r.squeeze()
       
 
 
@@ -288,8 +289,8 @@ class EarlyRetiermentBlock(nn.Module):
         #calculating a_ww a_rw a_rr
         
         #to do tax 
-        c_ww_t = x_ww * (y_t - social_security_tax(y_t) + a_w_t) + 1e-8
-        a_ww_tp = (1.0 - x_ww)*((y_t) - social_security_tax(y_t) + a_w_t)* (1+R) 
+        c_ww_t = x_ww * (y_t - income_tax(y_t) -social_security_tax(y_t) + a_w_t) + 1e-8
+        a_ww_tp = (1.0 - x_ww)*((y_t) - income_tax(y_t) - social_security_tax(y_t) + a_w_t)* (1+R) 
         
         b_t = retirement_benefit(all_y, self.year - T_ER, 35)
         
@@ -306,7 +307,7 @@ class EarlyRetiermentBlock(nn.Module):
         
         
         #update pr_bar
-        pr_bar_tp  = pr_bar_t + (1-pr_bar_t) * pr_t
+        pr_bar_tp  = pr_bar_t + (1-pr_bar_t) * pr_t[:,0]
         
         #calculate a_tp
         a_tp = (1-pr_bar_tp) * a_ww_tp +  pr_bar_tp*(a_r_tp)
@@ -336,9 +337,9 @@ class EarlyRetiermentBlock(nn.Module):
                 
                 'y_t': y_t,
                 'h_t': h_t,
-                'pr_t': pr_t,
+                'pr_t': pr_t[:,0],
                 'pr_bar_tp': pr_bar_tp, 
-                'pr_t' : pr_t,
+
                 'b_bar_tp': b_bar_tp}
         
         
@@ -444,8 +445,8 @@ class Model(nn.Module):
     #using the block for the first year, predicting a_2 and h_1
     h_t, x_t = self.work_blocks[f'year_22'](theta[:, 0], edu, a_1) 
     y_t = all_w[:,0] * h_t
-    a_t = (1.0-x_t)*(y_t - social_security_tax(y_t)+ a_1)*(1+R)
-    c_t = (x_t)*(y_t - social_security_tax(y_t)+ a_1)+1e-8
+    a_t = (1.0-x_t)*(y_t - income_tax(y_t)- social_security_tax(y_t)+ a_1)*(1+R)
+    c_t = (x_t)*(y_t - income_tax(y_t) - social_security_tax(y_t)+ a_1)+1e-8
     
     
     
@@ -465,8 +466,8 @@ class Model(nn.Module):
       
       
       y_t = all_w[:,i] * h_t
-      all_c[:, i] = (x_t)*(y_t - social_security_tax(y_t)+ a_t) +1e-8
-      a_t = (1.0 -x_t)*((y_t) - social_security_tax(y_t) + a_t)* (1+R) 
+      all_c[:, i] = (x_t)*(y_t - income_tax(y_t) -social_security_tax(y_t)+ a_t) +1e-8
+      a_t = (1.0 -x_t)*((y_t) - income_tax(y_t) -  social_security_tax(y_t) + a_t)* (1+R) 
       all_y[:, i] = y_t
       all_h[:, i] = h_t
       all_a[:,i+1] = a_t

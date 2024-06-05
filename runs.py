@@ -22,17 +22,17 @@ import time
 # List of hyperparameter sets
 
 
-phis = [1, 0,  .1, .001, ]
-alphas = [1,10, 1000]
+phis = [ 0.0005,0.0, 1.0]
+
 hyperparameter_sets = []
 for phi in phis:
-    for alpha in alphas:
+
         # for psi in psis:
             h_set = [
-                        '--experiment_title', f'single_r--alpha_pr_{alpha}--phi_{phi}',
-                        '--alpha_pr', f'{alpha}'   ,
+                        '--experiment_title', f'multiple_r--with_tax--gumbel--phi_{phi}',
+
                         '--phi' , f'{phi}',
-                        '--cuda_no', '1'
+                        '--cuda_no', '0'
                         
                         ]
             hyperparameter_sets.append(h_set)

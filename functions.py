@@ -22,7 +22,7 @@ wage = lambda u_t, theta_t : torch.maximum(torch.e**(u_t + theta_t) , torch.tens
 consumption = lambda a_t, y_t : a_t[:, :-1] + y_t -  a_t[:, 1:]/(1+R)
 
 
-income_tax  = lambda y_t: y_t - KAPPA * y_t**(1-TAU)
+income_tax  = lambda y_t: y_t - KAPPA * (y_t+1e-8)**(1-TAU)
 social_security_tax = lambda y_t: TAU_SS * torch.minimum(y_t, W_b)
 
 
