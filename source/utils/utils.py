@@ -237,11 +237,11 @@ def loss_function(model :Model, c_t, c_t_ER, pr_bar, pr_t ,h_t, epoch, s_writer,
   
   l_G=  args.lmbd
   l_U = 1 - (l_G)
-  l_M = 10
+  l_M = 100
   reg_term = l_G * general_regu 
-  loss =  -1 * l_U * util.mean() + reg_term + l_M * (abs(avg_work_hour_55 - Economic.M_D1) + abs(prcentage_working_60 - Economic.M_D2))
-  if math.isnan(loss):
-    print("hiiiiiiiiiiiiiiiiiiii")
+  # loss =  -1 * l_U * util.mean() + reg_term #+ l_M * (abs(avg_work_hour_55 - Economic.M_D1))
+  loss =  l_M * (avg_work_hour_55 - Economic.M_D1)
+
   # print( l_M * (abs(avg_work_hour_55 - Economic.M_D1) + abs(prcentage_working_60 - Economic.M_D2)))
   
   
@@ -249,6 +249,15 @@ def loss_function(model :Model, c_t, c_t_ER, pr_bar, pr_t ,h_t, epoch, s_writer,
 
   s_writer.add_scalar('Loss/reg_term',reg_term.detach().cpu(), epoch)
   s_writer.add_scalar('Loss/util_term',util.mean().detach().cpu(), epoch)
+  s_writer.add_scalar('Meta/avg_work_hour_55',avg_work_hour_55.detach().cpu(), epoch)
+  s_writer.add_scalar('Meta/prcentage_working_60',prcentage_working_60.detach().cpu(), epoch)
+  s_writer.add_scalar('Meta/phi',model.phi.detach().cpu(), epoch)
+  s_writer.add_scalar('Meta/psi',model.psi.detach().cpu(), epoch)
+  # s_writer.add_scalar('Meta/phi_grad',model.phi.grad.detach().cpu(), epoch)
+  # s_writer.add_scalar('Meta/psi_grad',model.psi.grad.detach().cpu(), epoch)
+  
+    
+  
   # s_writer.add_scalar('Loss/r_term',loss_R.detach().cpu(), epoch)
   
   
