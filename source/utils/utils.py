@@ -111,6 +111,39 @@ def cal_regu_term_each10(model: Model):
   return general_regu
 
 
+   
+
+def cal_regu_term_two_before_after(model: Model):
+
+  general_regu = 0
+
+
+  for year in range(Economic.AGE_0, Economic.T_LR):
+    
+    
+    w_g_1_t = model.get_working_block(year).general_layer_1.weight
+    b_g_1_t =  model.get_working_block(year).general_layer_1.bias
+
+
+    for other_year in range(max(year-2, Economic.AGE_0), min(year+2, Economic.T_LR)+1):
+      if year == other_year:
+        continue
+      
+      
+      w_g_1_other_year = model.get_working_block(other_year).general_layer_1.weight
+      b_g_1_other_year = model.get_working_block(other_year).general_layer_1.bias
+      # print(w_g_1_other_year.shape)
+      
+      num_input = min(w_g_1_other_year.shape[1],w_g_1_t.shape[1] )
+
+      general_regu += (torch.norm(w_g_1_other_year[:,:num_input] - w_g_1_t[:, :num_input] , 2)) / abs(other_year - year)
+      general_regu += (torch.norm(b_g_1_other_year - b_g_1_t , 2)) / abs(other_year - year)
+
+
+
+
+  return general_regu
+
 
 
 # def cal_regu_term_each10_old(model):
@@ -222,14 +255,16 @@ def loss_meta(h_t):
 
   
 def loss_function(model :Model, c_t, c_t_ER, pr_bar, pr_t ,h_t, epoch, s_writer, args):
-  avg_work_hour_55 = h_t[:, 55 - Economic.AGE_0].mean()
-  prcentage_working_60 = (h_t[:,60 - Economic.AGE_0] > 0).float().mean()
+  # avg_work_hour_55 = h_t[:, 55 - Economic.AGE_0].mean()
+  # prcentage_working_60 = (h_t[:,60 - Economic.AGE_0] > 0).float().mean()
 
   util = total_utility( c_t, c_t_ER, pr_bar, pr_t, h_t,model.phi, model.psi, epoch, s_writer, args) 
   if args.reg_mode == 'each10':
       cal_regu_term = cal_regu_term_each10
   elif args.reg_mode == 'last_year':
       cal_regu_term = cal_regu_term_lastyear
+  elif args.reg_mode == 'two_years':
+      cal_regu_term = cal_regu_term_two_before_after
   general_regu =  cal_regu_term(model)
 
 
@@ -239,8 +274,8 @@ def loss_function(model :Model, c_t, c_t_ER, pr_bar, pr_t ,h_t, epoch, s_writer,
   l_U = 1 - (l_G)
   l_M = 100
   reg_term = l_G * general_regu 
-  # loss =  -1 * l_U * util.mean() + reg_term #+ l_M * (abs(avg_work_hour_55 - Economic.M_D1))
-  loss =  l_M * (avg_work_hour_55 - Economic.M_D1)
+  loss =  -1 * l_U * util.mean() #+ reg_term + l_M * (abs(avg_work_hour_55 - Economic.M_D1))
+  # loss =  l_M * (avg_work_hour_55 - Economic.M_D1)
 
   # print( l_M * (abs(avg_work_hour_55 - Economic.M_D1) + abs(prcentage_working_60 - Economic.M_D2)))
   
@@ -249,10 +284,10 @@ def loss_function(model :Model, c_t, c_t_ER, pr_bar, pr_t ,h_t, epoch, s_writer,
 
   s_writer.add_scalar('Loss/reg_term',reg_term.detach().cpu(), epoch)
   s_writer.add_scalar('Loss/util_term',util.mean().detach().cpu(), epoch)
-  s_writer.add_scalar('Meta/avg_work_hour_55',avg_work_hour_55.detach().cpu(), epoch)
-  s_writer.add_scalar('Meta/prcentage_working_60',prcentage_working_60.detach().cpu(), epoch)
-  s_writer.add_scalar('Meta/phi',model.phi.detach().cpu(), epoch)
-  s_writer.add_scalar('Meta/psi',model.psi.detach().cpu(), epoch)
+  # s_writer.add_scalar('Meta/avg_work_hour_55',avg_work_hour_55.detach().cpu(), epoch)
+  # s_writer.add_scalar('Meta/prcentage_working_60',prcentage_working_60.detach().cpu(), epoch)
+  # s_writer.add_scalar('Meta/phi',model.phi.detach().cpu(), epoch)
+  # s_writer.add_scalar('Meta/psi',model.psi.detach().cpu(), epoch)
   # s_writer.add_scalar('Meta/phi_grad',model.phi.grad.detach().cpu(), epoch)
   # s_writer.add_scalar('Meta/psi_grad',model.psi.grad.detach().cpu(), epoch)
   

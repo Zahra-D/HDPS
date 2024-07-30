@@ -105,9 +105,9 @@ def main(args):
             
             for epoch in range(num_epochs):
                 
-                if epoch == 400:
-                    optimizer.add_param_group({'params': model.phi, 'lr': args.lr_phi})
-                    optimizer.add_param_group({'params': model.psi, 'lr': args.lr_psi})
+                # if epoch == 400:
+                #     optimizer.add_param_group({'params': model.phi, 'lr': args.lr_phi})
+                #     optimizer.add_param_group({'params': model.psi, 'lr': args.lr_psi})
                 print(epoch)
                 train_step(model, dataloader_train, epoch, writer, optimizer, device, args)
                 

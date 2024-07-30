@@ -13,7 +13,7 @@ def get_parser():
     parser.add_argument('--num_hidden_unit_w', default=10, type=int, help='number of hidden units for the working network')
     parser.add_argument('--num_hidden_unit_r', default=5, type=int, help='number of hidden units for the retirement network')
     parser.add_argument('--num_epochs', type=int, default=1000,  help='number of epochs')
-    parser.add_argument('--reg_mode', type=str, choices=['each10', 'last_year'],default='each10', help='Choose a regularization mode (each10,last_year)')
+    parser.add_argument('--reg_mode', type=str, choices=['each10', 'last_year', 'two_years'],default='each10', help='Choose a regularization mode (each10,last_year)')
     parser.add_argument('--lr', type=float, default=1e-3, help='learning rate')
     parser.add_argument('-lr_phi',  type=float, default=1e-6)
     parser.add_argument('-lr_psi',  type=float, default=1e-5)
