@@ -55,7 +55,12 @@ class Economic:
     
 
 
-
+    #paramters for unirfom distribution of phi and psi
+    PHI_a = 0.0001
+    PHI_b = 0.1
+    
+    PSI_a = 0.01
+    PSI_b = 0.1
 
    
     
@@ -74,6 +79,16 @@ class Economic:
     M_D2 = .75
     
     
+    
+    @staticmethod
+    def phi(n):
+        return (Economic.PHI_b - Economic.PHI_a) * torch.rand(n) + Economic.PHI_a
+    
+    
+        
+    @staticmethod
+    def psi(n):
+        return (Economic.PSI_b - Economic.PSI_a) * torch.rand(n) + Economic.PSI_a
     
     
     @staticmethod

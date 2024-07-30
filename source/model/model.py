@@ -42,12 +42,12 @@ class Model(nn.Module):
 
     
     self.blocks = nn.ModuleDict({
-      'work_blocks': nn.ModuleDict({ f'year_{i}': WorkYearBlock(i - Economic.AGE_0+3, num_hidden_node = num_hidden_node_w, layers_dict=layers_dict) for i in range(Economic.AGE_0,Economic.T_ER) }),
+      'work_blocks': nn.ModuleDict({ f'year_{i}': WorkYearBlock(i - Economic.AGE_0+5, num_hidden_node = num_hidden_node_w, layers_dict=layers_dict) for i in range(Economic.AGE_0,Economic.T_ER) }),
       'work_retirement_blocks' : nn.ModuleDict({ f'year_{i}': EarlyRetiermentBlock(year=i, num_hidden_node_r=num_hidden_node_r, num_hidden_node_w= num_hidden_node_w, alpha_pr=alpha_pr , hard_gumbel=hard_gumbel, layers_dict = layers_dict) for i in range(Economic.T_ER, Economic.T_LR+1) }),
       'retirement_blocks' : nn.ModuleDict({ f'year_{i}': RetirementYearBlock(year=i, num_hidden_unit=num_hidden_node_r) for i in range(Economic.T_LR+1, Economic.T_D+1) })})
 
-    self.phi = nn.Parameter(torch.tensor(phi_init))
-    self.psi = nn.Parameter(torch.tensor(psi_init))
+    # self.phi = nn.Parameter(torch.tensor(phi_init))
+    # self.psi = nn.Parameter(torch.tensor(psi_init))
     
     
     
@@ -82,7 +82,7 @@ class Model(nn.Module):
       return self.blocks['work_blocks'][f'year_{year}']
 
 
-  def forward(self, theta, edu, a_1, all_w):
+  def forward(self, theta, phi, psi, edu, a_1, all_w):
     """
     Forward pass of the neural network model.
 
@@ -116,7 +116,7 @@ class Model(nn.Module):
     
     
     #using the block for the first year, predicting a_2 and h_1
-    h_t, x_t = self.blocks['work_blocks'][f'year_22'](theta[:, 0], edu, a_1) 
+    h_t, x_t = self.blocks['work_blocks'][f'year_22'](theta[:, 0], phi, psi, edu, a_1) 
     y_t = all_w[:,0] * h_t
     
     c_t, a_t, _ = Economic.consumption_asset_cashInHand(x_t, y_t, a_1, type = 'working')
@@ -137,7 +137,7 @@ class Model(nn.Module):
     for i in range(1,i_ER):
       
 
-      h_t, x_t = self.blocks['work_blocks'][f'year_{i+Economic.AGE_0}'](theta[:, i], edu, a_t, all_y[:, :i])
+      h_t, x_t = self.blocks['work_blocks'][f'year_{i+Economic.AGE_0}'](theta[:, i], phi, psi,edu, a_t, all_y[:, :i])
       
       
       y_t = all_w[:,i] * h_t
@@ -182,7 +182,7 @@ class Model(nn.Module):
 
       # f forward(self, theta, edu, a_t, all_y, w_t, b_t, pr_bar_t, b_bar_t):
 
-      outputs = self.blocks['work_retirement_blocks'][f'year_{i+Economic.AGE_0}'](theta[:, i], edu, a_w_t,  a_r_t, all_y[:, :i,],all_w[:, i],  pr_bar, b_bar)
+      outputs = self.blocks['work_retirement_blocks'][f'year_{i+Economic.AGE_0}'](theta[:, i], phi, psi, edu, a_w_t,  a_r_t, all_y[:, :i,],all_w[:, i],  pr_bar, b_bar)
 
       #if we are retired (pr = 1) the working hour should be consider 0 in utility calculation
       all_h[:, i] = outputs['h_t']
@@ -212,7 +212,7 @@ class Model(nn.Module):
     
     
     #year 70
-    outputs = self.blocks['work_retirement_blocks'][f'year_{i_LR+Economic.AGE_0}'](theta[:, i_LR-1], edu, a_w_t,  a_r_t, all_y[:, :i_LR,],all_w[:, i_LR-1],  pr_bar, b_bar)
+    outputs = self.blocks['work_retirement_blocks'][f'year_{i_LR+Economic.AGE_0}'](theta[:, i_LR-1], phi, psi, edu, a_w_t,  a_r_t, all_y[:, :i_LR,],all_w[:, i_LR-1],  pr_bar, b_bar)
     
     all_a[:, i_LR+1] = outputs['a_tp']
     
@@ -237,7 +237,7 @@ class Model(nn.Module):
       # t = torch.ones_like(a_r_t).to(a_r_t.device) * (i+AGE_0)
       
       
-      x_t = self.blocks['retirement_blocks'][f'year_{i+Economic.AGE_0}'](a_r_t, b_bar)
+      x_t = self.blocks['retirement_blocks'][f'year_{i+Economic.AGE_0}'](a_r_t, b_bar, phi, psi,)
       
       
       c_t, a_r_t, _ = Economic.consumption_asset_cashInHand(x_t, b_bar, a_r_t, type = 'retired')

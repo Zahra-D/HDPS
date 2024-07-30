@@ -13,7 +13,7 @@ class EarlyRetiermentBlock(nn.Module):
         
         assert (year >= 62) and (year<=70)
         
-        self.working_block = WorkYearBlock(num_input=year - Economic.AGE_0 + 3, num_hidden_node = num_hidden_node_w,  mode= 'early_retirement_year', alpha_pr=alpha_pr,  hard_gumbel=hard_gumbel, layers_dict=layers_dict)
+        self.working_block = WorkYearBlock(num_input=year - Economic.AGE_0 + 5, num_hidden_node = num_hidden_node_w,  mode= 'early_retirement_year', alpha_pr=alpha_pr,  hard_gumbel=hard_gumbel, layers_dict=layers_dict)
         self.retirement_block = RetirementYearBlock(num_hidden_unit=num_hidden_node_r, year=year)
         
         self.year= year
@@ -26,11 +26,11 @@ class EarlyRetiermentBlock(nn.Module):
         
         
 
-      def forward(self, theta, edu, a_w_t, a_r_t, all_y, w_t, pr_bar_t, b_bar_t):
+      def forward(self, theta, phi, psi, edu, a_w_t, a_r_t, all_y, w_t, pr_bar_t, b_bar_t):
         
-        h_t, x_ww, pr_t, x_rw = self.working_block(theta, edu, a_w_t, all_y) 
+        h_t, x_ww, pr_t, x_rw = self.working_block(theta, phi, psi, edu, a_w_t, all_y) 
         # t = torch.ones_like(a_r_t).to(a_r_t.device) * self.year
-        x_rr = self.retirement_block(a_r_t, b_bar_t)
+        x_rr = self.retirement_block(a_r_t, b_bar_t, phi, psi)
           
           
 

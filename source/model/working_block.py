@@ -76,7 +76,7 @@ class WorkYearBlock(nn.Module):
 
 
   @dimension_corrector
-  def forward(self, theta, edu, a, y = None, b = None):
+  def forward(self, theta, phi, psi, edu, a, y = None, b = None):
     """
     Forward pass of the neural network.
 
@@ -96,13 +96,13 @@ class WorkYearBlock(nn.Module):
     
     if isinstance(y, torch.Tensor):
       if isinstance(b, torch.Tensor):
-        x = torch.concat([theta, edu, a, y, b], dim = -1)
+        x = torch.concat([theta, phi, psi, edu, a, y, b], dim = -1)
       else:
-        x = torch.concat([theta, edu, a, y], dim = -1)
+        x = torch.concat([theta, phi, psi, edu, a, y], dim = -1)
       
       
     else:
-      x = torch.concat([theta, edu, a], dim = -1)
+      x = torch.concat([theta, phi, psi, edu, a], dim = -1)
     
     
     # d = self.device

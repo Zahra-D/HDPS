@@ -11,9 +11,9 @@ class RetirementYearBlock(nn.Module):
         
         self.year = year
         
-        self.bn = nn.BatchNorm1d(2)
+        self.bn = nn.BatchNorm1d(4)
         
-        self.layer_1 = nn.Linear(2, num_hidden_unit)
+        self.layer_1 = nn.Linear(4, num_hidden_unit)
         torch.nn.init.xavier_uniform_(self.layer_1.weight)
 
         
@@ -27,8 +27,8 @@ class RetirementYearBlock(nn.Module):
         
         
     @dimension_corrector
-    def forward(self, a, b):
-      x = torch.concat([a, b], dim = -1)
+    def forward(self, a, b, phi, psi):
+      x = torch.concat([a, b, phi, psi], dim = -1)
       x = self.bn(x)
       
       x = self.layer_1(x)

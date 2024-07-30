@@ -15,7 +15,7 @@ def train_step(model: Model, dataloader, epoch, s_writer, optimizer, device, arg
             if batch_idx == 5:
                 pass
 
-        theta_t_, w_t_, edu_ = batch
+        theta_t_, w_t_, edu_, phi_, psi_ = batch
         w_t_ = w_t_.to(device)
 
         len_batch = len(batch[0])
@@ -24,7 +24,7 @@ def train_step(model: Model, dataloader, epoch, s_writer, optimizer, device, arg
 
         
         optimizer.zero_grad()
-        all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y = model(theta_t_.to(device), edu_.to(device), a_1.to(device),w_t_)
+        all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y = model(theta_t_.to(device), phi_, psi_, edu_.to(device), a_1.to(device),w_t_)
         
         
         # if (all_c[:, ] <= 0).any():

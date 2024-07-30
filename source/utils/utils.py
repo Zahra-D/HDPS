@@ -308,6 +308,9 @@ def loss_function(model :Model, c_t, c_t_ER, pr_bar, pr_t ,h_t, epoch, s_writer,
 def generating_dataset(number_samples, duration, theta_0, p_edu):
   
     #generating random noise for all people during all the years of wroking
+    
+    phi = Economic.phi(number_samples)
+    psi = Economic.psi(number_samples)
     ep_t = Economic.e((number_samples, duration))
     theta_t = torch.cumsum(ep_t, dim=-1) + theta_0
     prob = torch.tensor([p_edu] * number_samples)
@@ -316,7 +319,7 @@ def generating_dataset(number_samples, duration, theta_0, p_edu):
     w_t = Economic.wage(u_t, theta_t)
 
     
-    return TensorDataset(theta_t, w_t, edu)
+    return TensorDataset(theta_t, w_t, edu, phi, psi)
    
   
   
