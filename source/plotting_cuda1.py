@@ -17,8 +17,9 @@ lrs =  [1e-5, 1e-4, 1e-3, 1e-2]
 
 for lr in lrs:
     for alpha in alphas:
-# base_model_with_regu_wb_two_years_10HiddenUnits_seed92_phi0.0005/10000_batch_size/PSI0.04/lambda0.01/AdamW_lr:0.001/model/epoch999/model.pt
-        base_dir  = f'./2year_reg/multiple_r--with_tax--gumbel--phi_{phi}--tau_{alpha}--hard_gumbel/base_model_with_regu_wb_each10_10HiddenUnits_seed92_phi0.0006/10000_batch_size/PSI0.04/lambda0.01/AdamW_lr:{lr}'
+        
+        # /home/zdelbari/HDPS/source/Experiments/phi_psi_input_tau--1.0/base_model_with_regu_wb_each10_10HiddenUnits_seed92_phi0.0006/10000_batch_size/PSI0.04/lambda0.01/AdamW_lr:0.01/model/epoch900
+        base_dir  = f'./Experiments/phi_psi_input_tau--{alpha}/base_model_with_regu_wb_each10_10HiddenUnits_seed92_phi0.0006/10000_batch_size/PSI0.04/lambda0.01/AdamW_lr:{lr}'
         model = torch.load(f'{base_dir}/model/epoch{epoch}/model.pt')
         model.to(device)
         

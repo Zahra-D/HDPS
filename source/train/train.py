@@ -96,7 +96,7 @@ def evaluation(model, dataloader, device):
     for batch_idx, batch in enumerate(dataloader):
         with torch.no_grad():
 
-            theta_t, w_t, edu = batch
+            theta_t, w_t, edu,  phi_, psi_  = batch
             
             w_t = w_t.to(device)
             len_batch = len(batch[0])
