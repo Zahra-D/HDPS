@@ -19,12 +19,13 @@ def train_step(model: Model, dataloader, epoch, s_writer, optimizer, device, arg
         w_t_ = w_t_.to(device)
 
         len_batch = len(batch[0])
+        phi_, psi_ = phi_.to(device), psi_.to(device)
         
         a_1 = torch.tensor([Economic.A_1]* len_batch, dtype=torch.float32)
 
         
         optimizer.zero_grad()
-        all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y = model(theta_t_.to(device), phi_.to(device), psi_.to(device), edu_.to(device), a_1.to(device),w_t_)
+        all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y = model(theta_t_.to(device), phi_, psi_, edu_.to(device), a_1.to(device),w_t_)
         
         
         # if (all_c[:, ] <= 0).any():
@@ -45,7 +46,7 @@ def train_step(model: Model, dataloader, epoch, s_writer, optimizer, device, arg
         #         nan_gradients = True
 
 
-        loss = loss_function(model, all_c, all_c_ER, all_pr_bar, all_pr, all_h, epoch, s_writer, args)
+        loss = loss_function(model, all_c, all_c_ER, all_pr_bar, all_pr, all_h, phi_, psi_, epoch, s_writer, args)
 
 
         
@@ -59,9 +60,9 @@ def train_step(model: Model, dataloader, epoch, s_writer, optimizer, device, arg
         #         print(f"Gradient of parameter '{name}' contains NaN")
         #         nan_gradients = True
         
-        with torch.no_grad():
-            model.phi.clamp_(min=1e-5)
-            model.psi.clamp_(min=1e-8)
+        # with torch.no_grad():
+        #     model.phi.clamp_(min=1e-5)
+        #     model.psi.clamp_(min=1e-8)
             
             
         

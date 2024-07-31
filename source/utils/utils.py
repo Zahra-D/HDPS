@@ -102,7 +102,7 @@ def cal_regu_term_each10(model: Model):
 
     b_g_1_t =  model.get_working_block(year).general_layer_1.bias
 
-    general_regu += (torch.norm(w_g_1_pin_year[:,:year- Economic.AGE_0+3+retier_year] - w_g_1_t , 2)) / (pin_year - year)
+    general_regu += (torch.norm(w_g_1_pin_year[:,:year- Economic.AGE_0+5+retier_year] - w_g_1_t , 2)) / (pin_year - year)
     general_regu += (torch.norm(b_g_1_pin_year - b_g_1_t , 2)) / (pin_year - year)
 
 
@@ -254,11 +254,11 @@ def loss_meta(h_t):
   
 
   
-def loss_function(model :Model, c_t, c_t_ER, pr_bar, pr_t ,h_t, epoch, s_writer, args):
+def loss_function(model :Model, c_t, c_t_ER, pr_bar, pr_t ,h_t, phi, psi, epoch, s_writer, args):
   # avg_work_hour_55 = h_t[:, 55 - Economic.AGE_0].mean()
   # prcentage_working_60 = (h_t[:,60 - Economic.AGE_0] > 0).float().mean()
 
-  util = total_utility( c_t, c_t_ER, pr_bar, pr_t, h_t,model.phi, model.psi, epoch, s_writer, args) 
+  util = total_utility( c_t, c_t_ER, pr_bar, pr_t, h_t, phi, psi, epoch, s_writer, args) 
   if args.reg_mode == 'each10':
       cal_regu_term = cal_regu_term_each10
   elif args.reg_mode == 'last_year':

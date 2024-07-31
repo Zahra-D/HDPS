@@ -8,22 +8,23 @@ from train.train import evaluation
 dataset_eval = generating_dataset(Economic.J,  Economic.T_LR - Economic.AGE_0, Economic.THETA_0,Economic.P_EDU)
 dataloader_eval = DataLoader(dataset_eval, batch_size=100000)
 
-
+# /home/zdelbari/HDPS/source/Experiments/2year_reg/multiple_r--with_tax--gumbel--phi_0.0005--tau_0.1--hard_gumbel/base_model_with_regu_wb_two_years_10HiddenUnits_seed92_phi0.0005/10000_batch_size/PSI0.04/lambda0.01/AdamW_lr:0.001/model/epoch999
 
 device = 'cuda:0'
 epoch = 999
 
 # phis = [ 0.0006, 0.0005, 0.0001,  0.001]
 # alphas = [ 1e-2, 1e-1,1.0,  1e-3]
-phis = [0.0006]
-alphas = [1]
+phis = [ 0.0006, 0.0005,]
+alphas = [ 1e-2, 1e-1,1.0, 1e-3]
 
 
 for phi in phis:
     for alpha in alphas:
+# /home/zdelbari/HDPS/source/Experiments/2year_reg/multiple_r--with_tax--gumbel--phi_0.0005--tau_0.1--hard_gumbbase_model_with_regu_wb_two_years_10HiddenUnits_seed92_phi0.0005/10000_batch_size/PSI0.04/lambda0.01/AdamW_lr:0.001/model/epoch999
+        base_dir = f'./Experiments/2year_reg/multiple_r--with_tax--gumbel--phi_{phi}--tau_{alpha}--hard_gumbel/base_model_with_regu_wb_two_years_10HiddenUnits_seed92_phi{phi}/10000_batch_size/PSI0.04/lambda0.01/AdamW_lr:0.001'
 
-        # base_dir  = f'./Experiments/multiple_r--with_tax--gumbel--phi_{phi}--tau_{alpha}--hard_gumbel/base_model_with_regu_wb_each10_10HiddenUnits_seed92_phi{float(phi)}/10000_batch_size/PSI0.04/lambda0.01/AdamW_lr:0.001'
-        base_dir = f'/home/zdelbari/HDPS/source/Experiments/engaged_phi_psi_from_start/base_model_with_regu_wb_each10_10HiddenUnits_seed92_phi0.0006/10000_batch_size/PSI0.04/lambda0.01/AdamW_lr:0.001'
+       
         model = torch.load(f'{base_dir}/model/epoch{epoch}/model.pt')
         model.to(device)
         
