@@ -84,52 +84,53 @@ def Histograms_Individual_Ages(data, edu, type, plots_base_dir = None, epoch = N
     
     
     
-def plot_trend(data, edu, mask_retirement, type, func,plots_base_dir= None, epoch = None, save = False):
+def plot_trend(data:torch.Tensor, edu, pr, type, func,plots_base_dir= None, epoch = None, save = False):
     
     AGE_0 = Economic.AGE_0
     T_ER = Economic.T_ER
     
+    # print(mask_retirement.shape)
+    mask_retirement = torch.concat([torch.zeros(data.shape[0], data.shape[1]-pr.shape[1]),torch.cumsum(pr, dim = 1)], dim = 1)
+    print(mask_retirement.shape)
+    
     plt.figure(figsize=(15,7))
     
-    if type in ['Income', 'Work_Hour']:
+    if type in ['Income', 'Workhour']:
     
-        mask_all = torch.concat([torch.ones(len(edu), (T_ER - AGE_0)), mask_retirement], axis = 1)
-
+        # mask_all = torch.concat([torch.ones(len(edu), (T_ER - AGE_0)), mask_retirement], dim = 1)
+        data[mask_retirement!=0] = torch.nan
     
-    elif type == 'Consumption':
+    # elif type == 'Consumption':
     
-        mask_all = torch.ones_like(data)
+    #     # mask_all = torch.ones_like(data)
         
-    elif type == 'Asset':
-        mask_all = torch.ones_like(data)
+    # elif type == 'Asset':
+    #     mask_all = torch.ones_like(data)
 
     
     if func == 'mean':
         
-          
-            # weights_edu_0 = torch.concat( [torch.ones((T_ER - AGE_0)) * len(data[edu<=0]) , mask_retirement[edu<=0].sum(dim=0)], dim = 0) 
-            # weights_edu_1 = torch.concat( [torch.ones((T_ER - AGE_0)) * len(data[edu>0]) , mask_retirement[edu>0].sum(dim=0)], dim = 0) 
-            
-            # plt.plot( data[edu > 0][:,:T_LR].sum(dim=0)/weights_edu_1, color='skyblue', label='edu = 1')
-            # plt.plot( data[edu <= 0][:,:T_LR].sum(dim=0)/weights_edu_0, color='orange', label='edu = 0')
-            # plt.xticks(AGE_0, T_LR+1)
 
+            # plt.plot( data[edu > 0][:,:Economic.T_LR].sum(dim=0)/mask_all[edu > 0].sum(dim = 0), color='skyblue', label='edu = 1')
+            # plt.plot( data[edu <= 0][:,:Economic.T_LR].sum(dim=0)/mask_all[edu <= 0].sum(dim = 0), color='orange', label='edu = 0')
+            # plt.xticks(AGE_0, Economic.T_LR+1)
             
-            plt.plot( range(AGE_0, len(data[0]) + AGE_0), data[edu > 0][mask_all].mean(dim=0), color='skyblue', label='edu = 1')
-            plt.plot( range(AGE_0, len(data[0]) + AGE_0), data[edu <= 0].mean(dim=0), color='orange', label='edu = 0')
-  
-  
+            plt.plot( data[edu > 0].nanmean(dim = 0), color='skyblue', label='edu = 1')
+            plt.plot( data[edu <= 0].nanmean(dim=0), color='orange', label='edu = 0')
+            # plt.xticks(AGE_0, len(data) + AGE_0)
+
+
         
     elif func == 'median':
         
-        if type in ['Income', 'Work_Hour']:
-            plt.plot( torch.concat([data[edu > 0][:,T_ER].median(dim=0).values], axis = 1), color='skyblue', label='edu = 1')
-            plt.plot( range(AGE_0, len(data[0]) + AGE_0), data[edu <= 0].median(dim=0).values, color='orange', label='edu = 0')
+
+        plt.plot( data[edu > 0].nanmedian(dim=0).values, color='skyblue', label='edu = 1')
+        plt.plot(data[edu <= 0].nanmedian(dim=0).values, color='orange', label='edu = 0')
 
             
-        elif type in ['Consumption', 'Asset']:
-            plt.plot( range(AGE_0, len(data[0]) + AGE_0), data[edu > 0].median(dim=0).values, color='skyblue', label='edu = 1')
-            plt.plot( range(AGE_0, len(data[0]) + AGE_0), data[edu <= 0].median(dim=0).values, color='orange', label='edu = 0')
+        # elif type in ['Consumption', 'Asset']:
+        #     plt.plot( range(AGE_0, len(data[0]) + AGE_0), data[edu > 0].median(dim=0).values, color='skyblue', label='edu = 1')
+        #     plt.plot( range(AGE_0, len(data[0]) + AGE_0), data[edu <= 0].median(dim=0).values, color='orange', label='edu = 0')
 
          
     plt.legend()
@@ -141,64 +142,64 @@ def plot_trend(data, edu, mask_retirement, type, func,plots_base_dir= None, epoc
         plt.close()
         
         
-def policy_function_plot(model, edu, type, all_a, all_theta,  plots_base_dir, epoch):
+# def policy_function_plot(model, edu, type, all_a, all_theta,  plots_base_dir, epoch):
     
-    AGE_0 = Economic.AGE_0
-    T_LR = Economic.T_LR
+#     AGE_0 = Economic.AGE_0
+#     T_LR = Economic.T_LR
     
-    fig, ax = plt.subplots(2, 4, figsize=(20,10))
-    for i, age in enumerate([25, 40, 55, 75]):
+#     fig, ax = plt.subplots(2, 4, figsize=(20,10))
+#     for i, age in enumerate([25, 40, 55, 75]):
 
             
-        sigma_1 = all_a[edu>0][:,age - AGE_0].std()
-        sigma_0 = all_a[edu<=0][:,age - AGE_0].std()
+#         sigma_1 = all_a[edu>0][:,age - AGE_0].std()
+#         sigma_0 = all_a[edu<=0][:,age - AGE_0].std()
         
-        mean_1 = all_a[edu>0][:,age - AGE_0].mean()
-        mean_0 = all_a[edu<=0][:,age - AGE_0].mean()
+#         mean_1 = all_a[edu>0][:,age - AGE_0].mean()
+#         mean_0 = all_a[edu<=0][:,age - AGE_0].mean()
         
-        t_q1_1 = torch.quantile(all_theta[edu>0][:,age - AGE_0], .25)
-        t_q1_0 = torch.quantile(all_theta[edu<=0][:,age - AGE_0], .25)
+#         t_q1_1 = torch.quantile(all_theta[edu>0][:,age - AGE_0], .25)
+#         t_q1_0 = torch.quantile(all_theta[edu<=0][:,age - AGE_0], .25)
         
-        t_q2_1 = torch.quantile(all_theta[edu>0][:,age - AGE_0], .5)
-        t_q2_0 = torch.quantile(all_theta[edu<=0][:,age - AGE_0], .5)
+#         t_q2_1 = torch.quantile(all_theta[edu>0][:,age - AGE_0], .5)
+#         t_q2_0 = torch.quantile(all_theta[edu<=0][:,age - AGE_0], .5)
         
-        t_q3_1 = torch.quantile(all_theta[edu>0][:,age - AGE_0], .75)
-        t_q3_0 = torch.quantile(all_theta[edu<=0][:,age - AGE_0], .75)
-        
-        
-        
-        y = torch.ones((1000, age - AGE_0)) * 50000
-        
-        generated_a_1 = torch.arange(mean_1 - 3*sigma_1, mean_1 + 3 * sigma_1, 6 * sigma_1 /1000 )
-        generated_a_0 = torch.arange(mean_0 - 3 * sigma_1, mean_0 + 3 * sigma_0, 6 * sigma_0 /1000 )
+#         t_q3_1 = torch.quantile(all_theta[edu>0][:,age - AGE_0], .75)
+#         t_q3_0 = torch.quantile(all_theta[edu<=0][:,age - AGE_0], .75)
         
         
         
+#         y = torch.ones((1000, age - AGE_0)) * 50000
         
-        if age <= T_LR:
-            block = model.work_blocks[f'year_{age}']
-        else:
-            block = model.RetirementYearBlock
-        
-        curve1_1 = block(t_q1_1 * torch.one((1000,1)), edu[edu>0], generated_a_1, y )
-        curve2_1 = block(t_q2_1 * torch.one((1000,1)), edu[edu>0], generated_a_1, y )
-        curve3_1 = block(t_q3_1 * torch.one((1000,1)), edu[edu>0], generated_a_1, y )
+#         generated_a_1 = torch.arange(mean_1 - 3*sigma_1, mean_1 + 3 * sigma_1, 6 * sigma_1 /1000 )
+#         generated_a_0 = torch.arange(mean_0 - 3 * sigma_1, mean_0 + 3 * sigma_0, 6 * sigma_0 /1000 )
         
         
         
-        curve1_0 = block(t_q1_0 * torch.one((1000,1)), edu[edu<=0], generated_a_0, y )
-        curve2_0 = block(t_q2_0 * torch.one((1000,1)), edu[edu<=0], generated_a_0, y )
-        curve3_0 = block(t_q3_0 * torch.one((1000,1)), edu[edu<=0], generated_a_0, y )
+        
+#         if age <= T_LR:
+#             block = model.work_blocks[f'year_{age}']
+#         else:
+#             block = model.RetirementYearBlock
+        
+#         curve1_1 = block(t_q1_1 * torch.one((1000,1)), edu[edu>0], generated_a_1, y )
+#         curve2_1 = block(t_q2_1 * torch.one((1000,1)), edu[edu>0], generated_a_1, y )
+#         curve3_1 = block(t_q3_1 * torch.one((1000,1)), edu[edu>0], generated_a_1, y )
         
         
-        ax[1][i].plot(curve1_1, color='skyblue', label='edu = 1, q=1')
-        ax[1][i].plot(curve2_1, color='orange', label='edu = 1, q=2')
-        ax[1][i].plot(curve3_1, color='pink', label='edu = 1, q=3')
+        
+#         curve1_0 = block(t_q1_0 * torch.one((1000,1)), edu[edu<=0], generated_a_0, y )
+#         curve2_0 = block(t_q2_0 * torch.one((1000,1)), edu[edu<=0], generated_a_0, y )
+#         curve3_0 = block(t_q3_0 * torch.one((1000,1)), edu[edu<=0], generated_a_0, y )
+        
+        
+#         ax[1][i].plot(curve1_1, color='skyblue', label='edu = 1, q=1')
+#         ax[1][i].plot(curve2_1, color='orange', label='edu = 1, q=2')
+#         ax[1][i].plot(curve3_1, color='pink', label='edu = 1, q=3')
 
 
-        ax[0][i].plot(curve1_0, color='skyblue', label='edu = 0, q=1')
-        ax[0][i].plot(curve2_0, color='orange', label='edu = 0, q=2')
-        ax[0][i].plot(curve3_0, color='pink', label='edu = 0, q=3')
+#         ax[0][i].plot(curve1_0, color='skyblue', label='edu = 0, q=1')
+#         ax[0][i].plot(curve2_0, color='orange', label='edu = 0, q=2')
+#         ax[0][i].plot(curve3_0, color='pink', label='edu = 0, q=3')
         
     
 def inverse_wage(wage, t, edu):
@@ -252,7 +253,7 @@ def policy_function_plot_asset(model: Model, edu, type, all_a, all_w, device, pl
         
         
         # if age <= T_LR:
-        block = model.work_blocks[f'year_{age}']
+        block = model.blocks['work_blocks'][f'year_{age}']
         # else:
         #     block = model.RetirementYearBlock
         
@@ -379,8 +380,8 @@ def policy_function_plot_cashInHand(model: Model, edu, type, all_a, all_w, devic
         generated_a_0 = torch.arange(mean_0 - 2 * sigma_0, mean_0 + 2 * sigma_0, 4 * sigma_0 /1000 ).to(device)[:1000]
         
         
-        # if age <= T_LR:
-        block = model.work_blocks[f'year_{age}']
+        # if age <= T_LR:'
+        block = model.blocks['work_blocks'][f'year_{age}']
         # else:
         #     block = model.RetirementYearBlock
         
@@ -521,7 +522,7 @@ def policy_function_plot_wage(model:Model, edu, type, all_a, all_w, device,  plo
         generated_th_0 = inverse_wage(generated_w_0, age, 0)
         
         # if age <= T_LR:
-        block = model.work_blocks[f'year_{age}']
+        block = model.blocks['work_blocks'][f'year_{age}']
         # else:
         #     block = model.RetirementYearBlock
         
