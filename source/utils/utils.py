@@ -258,7 +258,7 @@ def loss_function(model :Model, c_t, c_t_ER, pr_bar, pr_t ,h_t, epoch, s_writer,
   # avg_work_hour_55 = h_t[:, 55 - Economic.AGE_0].mean()
   # prcentage_working_60 = (h_t[:,60 - Economic.AGE_0] > 0).float().mean()
 
-  util = total_utility( c_t, c_t_ER, pr_bar, pr_t, h_t,model.phi, model.psi, epoch, s_writer, args) 
+  util = total_utility( c_t, c_t_ER, pr_bar, pr_t, h_t,args.phi, args.psi, epoch, s_writer, args) 
   if args.reg_mode == 'each10':
       cal_regu_term = cal_regu_term_each10
   elif args.reg_mode == 'last_year':

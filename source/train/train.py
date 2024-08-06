@@ -59,9 +59,9 @@ def train_step(model: Model, dataloader, epoch, s_writer, optimizer, device, arg
         #         print(f"Gradient of parameter '{name}' contains NaN")
         #         nan_gradients = True
         
-        with torch.no_grad():
-            model.phi.clamp_(min=1e-5)
-            model.psi.clamp_(min=1e-8)
+        # with torch.no_grad():
+        #     model.phi.clamp_(min=1e-5)
+        #     model.psi.clamp_(min=1e-8)
             
             
         

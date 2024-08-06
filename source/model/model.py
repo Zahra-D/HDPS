@@ -25,7 +25,12 @@ class Model(nn.Module):
   
 
 
-  def __init__(self, num_hidden_node_w = 10, num_hidden_node_r = 5, alpha_pr = 1, hard_gumbel = True, phi_init = 0.0006, psi_init = 0.04 ):
+  def __init__(self,
+               num_hidden_node_w = 10,
+               num_hidden_node_r = 5,
+               alpha_h = 1,
+               alpha_pr = 1,
+               hard_gumbel = True ):
     """
     Constructor for the Model class.
 
@@ -42,12 +47,22 @@ class Model(nn.Module):
 
     
     self.blocks = nn.ModuleDict({
-      'work_blocks': nn.ModuleDict({ f'year_{i}': WorkYearBlock(i - Economic.AGE_0+3, num_hidden_node = num_hidden_node_w, layers_dict=layers_dict) for i in range(Economic.AGE_0,Economic.T_ER) }),
-      'work_retirement_blocks' : nn.ModuleDict({ f'year_{i}': EarlyRetiermentBlock(year=i, num_hidden_node_r=num_hidden_node_r, num_hidden_node_w= num_hidden_node_w, alpha_pr=alpha_pr , hard_gumbel=hard_gumbel, layers_dict = layers_dict) for i in range(Economic.T_ER, Economic.T_LR+1) }),
+      'work_blocks': nn.ModuleDict({ f'year_{i}': WorkYearBlock(i - Economic.AGE_0+3,
+                                                                num_hidden_node = num_hidden_node_w,
+                                                                alpha_h = alpha_h,
+                                                                layers_dict=layers_dict) for i in range(Economic.AGE_0,Economic.T_ER) }),
+      
+      'work_retirement_blocks' : nn.ModuleDict({ f'year_{i}': EarlyRetiermentBlock(year=i, num_hidden_node_r=num_hidden_node_r,
+                                                                                   num_hidden_node_w= num_hidden_node_w,
+                                                                                   alpha_h = alpha_h,
+                                                                                   alpha_pr=alpha_pr,
+                                                                                   hard_gumbel=hard_gumbel,
+                                                                                   layers_dict = layers_dict) for i in range(Economic.T_ER, Economic.T_LR+1) }),
+      
       'retirement_blocks' : nn.ModuleDict({ f'year_{i}': RetirementYearBlock(year=i, num_hidden_unit=num_hidden_node_r) for i in range(Economic.T_LR+1, Economic.T_D+1) })})
 
-    self.phi = nn.Parameter(torch.tensor(phi_init))
-    self.psi = nn.Parameter(torch.tensor(psi_init))
+    # self.phi = nn.Parameter(torch.tensor(phi_init))
+    # self.psi = nn.Parameter(torch.tensor(psi_init))
     
     
     

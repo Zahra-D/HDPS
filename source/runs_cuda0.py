@@ -22,7 +22,7 @@ import time
 # List of hyperparameter sets
 
 
-phis = [ 0.0006, 0.0005,]
+phis = [ 0.0006]
 alphas = [ 1e-2, 1e-1,1.0, 1e-3]
 
 hyperparameter_sets = []
@@ -31,8 +31,9 @@ for phi in phis:
 
         # for psi in psis:
             h_set = [
-                        '--experiment_title', f'2year_reg/multiple_r--with_tax--gumbel--phi_{phi}--tau_{alpha}--hard_gumbel',
+                        '--experiment_title', f'discrete_H/multiple_r--with_tax--gumbel--phi_{phi}--tau_{alpha}--hard_gumbel',
                         '--alpha_pr', f'{alpha}',
+                        '--alpha_h', f'{alpha}',
                         '--phi' , f'{phi}',
                         '--hard_gumbel', 
                         '--cuda_no', '0',

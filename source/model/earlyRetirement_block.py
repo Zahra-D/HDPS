@@ -8,12 +8,26 @@ from source.economic import Economic
 
 class EarlyRetiermentBlock(nn.Module):
   
-      def __init__(self, year=61,num_hidden_node_w = 10, num_hidden_node_r = 5, alpha_pr = 1, hard_gumbel = True, layers_dict=None):
+      def __init__(self,
+                   year=61,
+                   num_hidden_node_w = 10,
+                   num_hidden_node_r = 5,
+                   alpha_h = 1,
+                   alpha_pr = 1,
+                   hard_gumbel = True,
+                   layers_dict=None):
         super().__init__()
         
         assert (year >= 62) and (year<=70)
         
-        self.working_block = WorkYearBlock(num_input=year - Economic.AGE_0 + 3, num_hidden_node = num_hidden_node_w,  mode= 'early_retirement_year', alpha_pr=alpha_pr,  hard_gumbel=hard_gumbel, layers_dict=layers_dict)
+        self.working_block = WorkYearBlock(num_input=year - Economic.AGE_0 + 3,
+                                           num_hidden_node = num_hidden_node_w,
+                                           mode= 'early_retirement_year',
+                                           alpha_h = alpha_h,
+                                           alpha_pr=alpha_pr,
+                                           hard_gumbel=hard_gumbel,
+                                           layers_dict=layers_dict)
+        
         self.retirement_block = RetirementYearBlock(num_hidden_unit=num_hidden_node_r, year=year)
         
         self.year= year

@@ -25,6 +25,7 @@ def get_parser():
     parser.add_argument('--save_dir', type=str,default='./Experiments', help='the directory that the training result will be saved in')
     parser.add_argument('--phi', type=float, default=0.0006, help='Phi in utility')
     parser.add_argument('--alpha_pr', type=float, default=5, help='the tempreture of gumbel-softmax funciotn of pr')
+    parser.add_argument('--alpha_h', type=float, default=5, help='the tempreture of gumbel-softmax funciotn of H')
     parser.add_argument('--hard_gumbel', action='store_true', default=False, help='in gumbel softmax')
 
     return parser
