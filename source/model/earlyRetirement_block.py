@@ -57,7 +57,7 @@ class EarlyRetiermentBlock(nn.Module):
         # a_rr_tp = ((1.0-x_rr)*(b_bar_t + a_r_t)*(1+R))
         # c_rr_t = (x_rr *(b_bar_t + a_r_t))+ 1e-8
         
-        #the asset for next year, the a_w_tp is the same as a_ww_t so do not use a new varialbe for it
+        #the asset for next year, the a_w_tp is the same as a_ww_t so we did not use a new varialbe for it
         a_r_tp = (1-pr_bar_t) * ( a_rw_tp )  +  pr_bar_t*(a_rr_tp)
         
         

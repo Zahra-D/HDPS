@@ -22,8 +22,8 @@ import time
 # List of hyperparameter sets
 
 
-phis = [ 0.0006, 0.0005,]
-alphas = [ 1e-2, 1e-1,1.0, 1e-3]
+phis = [ 0.0006]
+alphas = [1e-1, 1e-2, 1e-3, 1e-4]
 
 hyperparameter_sets = []
 for phi in phis:
@@ -37,6 +37,8 @@ for phi in phis:
                         '--hard_gumbel', 
                         '--cuda_no', '0',
                         '--reg_mode', 'two_years'
+                        # '--batch_size', '10000',
+                        
                         
                         ]
             hyperparameter_sets.append(h_set)
