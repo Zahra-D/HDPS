@@ -202,7 +202,7 @@ class Model(nn.Module):
       a_w_t = outputs['a_w_tp']
       a_r_t = outputs['a_r_tp']
       
-      all_pr[:,i-i_ER+1] =  outputs['pr_t']
+      all_pr[:,i-i_ER] =  outputs['pr_t']
       
       
     
@@ -223,7 +223,7 @@ class Model(nn.Module):
     
     a_r_t = outputs['a_r_tp']
     b_bar = outputs['b_bar_tp']
-    # all_pr[:,i_LR-i_ER] =  1
+    all_pr[:,i_LR-i_ER] =  1
     
   
   

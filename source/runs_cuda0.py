@@ -31,12 +31,14 @@ for phi in phis:
 
         # for psi in psis:
             h_set = [
-                        '--experiment_title', f'2year_reg/multiple_r--with_tax--gumbel--phi_{phi}--tau_{alpha}--hard_gumbel',
+                        '--experiment_title', f'2year_reg_j10M/multiple_r--with_tax--gumbel--phi_{phi}--tau_{alpha}--hard_gumbel',
                         '--alpha_pr', f'{alpha}',
                         '--phi' , f'{phi}',
                         '--hard_gumbel', 
                         '--cuda_no', '0',
-                        '--reg_mode', 'two_years'
+                        '--reg_mode', 'two_years',
+                        '--num_epochs', '10',
+                        '--save_interval_epoch', '1'
                         # '--batch_size', '10000',
                         
                         

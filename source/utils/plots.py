@@ -95,10 +95,10 @@ def plot_trend(data:torch.Tensor, edu, pr, type, func,plots_base_dir= None, epoc
     
     plt.figure(figsize=(15,7))
     
-    if type in ['Income', 'Workhour']:
+    # if type in ['Income', 'Workhour']:
     
-        # mask_all = torch.concat([torch.ones(len(edu), (T_ER - AGE_0)), mask_retirement], dim = 1)
-        data[mask_retirement!=0] = torch.nan
+        ## mask_all = torch.concat([torch.ones(len(edu), (T_ER - AGE_0)), mask_retirement], dim = 1)
+        # data[mask_retirement!=0] = torch.nan
     
     # elif type == 'Consumption':
     
@@ -115,8 +115,8 @@ def plot_trend(data:torch.Tensor, edu, pr, type, func,plots_base_dir= None, epoc
             # plt.plot( data[edu <= 0][:,:Economic.T_LR].sum(dim=0)/mask_all[edu <= 0].sum(dim = 0), color='orange', label='edu = 0')
             # plt.xticks(AGE_0, Economic.T_LR+1)
             
-            plt.plot( data[edu > 0].nanmean(dim = 0), color='skyblue', label='edu = 1')
-            plt.plot( data[edu <= 0].nanmean(dim=0), color='orange', label='edu = 0')
+            plt.plot( data[edu > 0].mean(dim = 0), color='skyblue', label='edu = 1')
+            plt.plot( data[edu <= 0].mean(dim=0), color='orange', label='edu = 0')
             # plt.xticks(AGE_0, len(data) + AGE_0)
 
 
@@ -124,8 +124,8 @@ def plot_trend(data:torch.Tensor, edu, pr, type, func,plots_base_dir= None, epoc
     elif func == 'median':
         
 
-        plt.plot( data[edu > 0].nanmedian(dim=0).values, color='skyblue', label='edu = 1')
-        plt.plot(data[edu <= 0].nanmedian(dim=0).values, color='orange', label='edu = 0')
+        plt.plot( data[edu > 0].median(dim=0).values, color='skyblue', label='edu = 1')
+        plt.plot(data[edu <= 0].median(dim=0).values, color='orange', label='edu = 0')
 
             
         # elif type in ['Consumption', 'Asset']:
