@@ -67,7 +67,7 @@ def main(args):
             
         for num_h_u in num_h_u_w:
             
-            model = Model(num_hidden_node_w=num_h_u, alpha_pr= args.alpha_pr , hard_gumbel=args.hard_gumbel)
+            model = Model(num_hidden_node_w=num_h_u, alpha_h= args.alpha_h ,alpha_pr= args.alpha_pr , hard_gumbel=args.hard_gumbel)
             
             param_groups = [
 

@@ -23,7 +23,7 @@ import time
 
 
 phis = [ 0.0006]
-alphas = [ 1e-2, 1e-1,1.0, 1e-3]
+alphas = [ 1e-2, 1e-1,1e-4, 1e-3]
 
 hyperparameter_sets = []
 for phi in phis:
@@ -31,8 +31,8 @@ for phi in phis:
 
         # for psi in psis:
             h_set = [
-                        '--experiment_title', f'discrete_H/multiple_r--with_tax--gumbel--phi_{phi}--tau_{alpha}--hard_gumbel',
-                        '--alpha_pr', f'{alpha}',
+                        '--experiment_title', f'discrete_H_ok/multiple_r--with_tax--gumbel--phi_{phi}--tau_{alpha}--hard_gumbel',
+                        '--alpha_pr', '1e-3',
                         '--alpha_h', f'{alpha}',
                         '--phi' , f'{phi}',
                         '--hard_gumbel', 
@@ -62,4 +62,4 @@ with concurrent.futures.ThreadPoolExecutor() as executor:
         future = executor.submit(run_training, params)
         
         # Introduce a delay (e.g., 5 seconds) before starting the next task
-        time.sleep(20)
+        time.sleep(10)

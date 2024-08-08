@@ -1,0 +1,22 @@
+{
+    "experiment_title": "discrete_H_ok/multiple_r--with_tax--gumbel--phi_0.0006--tau_0.0001--soft_gumbel",
+    "batch_size": 10000,
+    "seed": 92,
+    "num_hidden_unit_w": 10,
+    "num_hidden_unit_r": 5,
+    "num_epochs": 1000,
+    "reg_mode": "two_years",
+    "lr": 0.001,
+    "lr_phi": 1e-06,
+    "lr_psi": 1e-05,
+    "lmbd": 0.01,
+    "psi": 0.04,
+    "save_interval_epoch": 100,
+    "device": "cuda",
+    "cuda_no": 1,
+    "save_dir": "./Experiments",
+    "phi": 0.0006,
+    "alpha_pr": 0.001,
+    "alpha_h": 0.0001,
+    "hard_gumbel": false
+}

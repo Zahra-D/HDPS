@@ -274,7 +274,7 @@ def loss_function(model :Model, c_t, c_t_ER, pr_bar, pr_t ,h_t, epoch, s_writer,
   l_U = 1 - (l_G)
   l_M = 100
   reg_term = l_G * general_regu 
-  loss =  -1 * l_U * util.mean() #+ reg_term + l_M * (abs(avg_work_hour_55 - Economic.M_D1))
+  loss =  -1 * l_U * util.mean() + l_G* reg_term #+ l_M * (abs(avg_work_hour_55 - Economic.M_D1))
   # loss =  l_M * (avg_work_hour_55 - Economic.M_D1)
 
   # print( l_M * (abs(avg_work_hour_55 - Economic.M_D1) + abs(prcentage_working_60 - Economic.M_D2)))
