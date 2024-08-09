@@ -31,7 +31,7 @@ for phi in phis:
 
         # for psi in psis:
             h_set = [
-                        '--experiment_title', f'discrete_H_ok/multiple_r--with_tax--gumbel--phi_{phi}--tau_{alpha}--hard_gumbel',
+                        '--experiment_title', f'discrete_H_ok_logit_woREG/multiple_r--with_tax--gumbel--phi_{phi}--tau_{alpha}--hard_gumbel',
                         '--alpha_pr', '1e-3',
                         '--alpha_h', f'{alpha}',
                         '--phi' , f'{phi}',

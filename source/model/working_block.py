@@ -138,7 +138,7 @@ class WorkYearBlock(nn.Module):
     # x_h = (self.a_activation(x_h) * self.h).squeeze(-1)
     # x_h = F.softmax(x_h, dim=-1)
     
-    x_h = self.gumbel( x_h, hard=self.hard_gumbel, tau=self.alpha_h)
+    x_h = self.gumbel( torch.log(F.softmax(x_h, dim=-1)+1e-8), hard=self.hard_gumbel, tau=self.alpha_h)
     
 
      
