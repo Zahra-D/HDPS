@@ -126,12 +126,15 @@ class Model(nn.Module):
     all_h = torch.zeros(B, i_D).to(device)
     all_y = torch.zeros(B, i_LR).to(device)
     all_c = torch.zeros(B, i_D).to(device)
+    
+    all_x_mean =torch.zeros(i_ER).to(device)
+    all_x_std =torch.zeros(i_ER).to(device)
 
     
     
     
     #using the block for the first year, predicting a_2 and h_1
-    h_t, x_t = self.blocks['work_blocks'][f'year_22'](theta[:, 0], edu, a_1) 
+    h_t, x_t, x_mean, x_std = self.blocks['work_blocks'][f'year_22'](theta[:, 0], edu, a_1) 
     y_t = all_w[:,0] * h_t
     
     c_t, a_t, _ = Economic.consumption_asset_cashInHand(x_t, y_t, a_1, type = 'working')
@@ -145,6 +148,8 @@ class Model(nn.Module):
     all_y[:,0] = y_t
     all_c[:, 0] = c_t
     all_a[:,1] = a_t
+    all_x_mean[0] = x_mean
+    all_x_std[0] = x_std
     
     
     # loop over years until early retirement,
@@ -152,8 +157,9 @@ class Model(nn.Module):
     for i in range(1,i_ER):
       
 
-      h_t, x_t = self.blocks['work_blocks'][f'year_{i+Economic.AGE_0}'](theta[:, i], edu, a_t, all_y[:, :i])
-      
+      h_t, x_t, x_mean, x_std = self.blocks['work_blocks'][f'year_{i+Economic.AGE_0}'](theta[:, i], edu, a_t, all_y[:, :i])
+      all_x_mean[i] = x_mean
+      all_x_std[i] = x_std
       
       y_t = all_w[:,i] * h_t
       c_t , a_t , _ = Economic.consumption_asset_cashInHand(x_t, y_t, a_t, type = 'working')
@@ -264,7 +270,7 @@ class Model(nn.Module):
       all_c[:,i] = c_t
 
   
-    return  all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y
+    return  all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y, all_x_mean, all_x_std
      
       
       

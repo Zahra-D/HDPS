@@ -165,5 +165,5 @@ class WorkYearBlock(nn.Module):
 
 
 
-    return x_h, x_x_w.squeeze()
+    return x_h, x_x_w.squeeze(), x_x_w.mean(), x_x_w.std()
   
