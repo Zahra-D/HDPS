@@ -112,12 +112,15 @@ class Model(nn.Module):
     all_y = torch.zeros(B, i_LR).to(device)
     all_c = torch.zeros(B, i_D).to(device)
 
+    all_x = torch.zeros(B, i_ER)
+    # all_xstd = torch.zeros(B, i_ER)
     
     
     
     #using the block for the first year, predicting a_2 and h_1
     h_t, x_t = self.blocks['work_blocks'][f'year_22'](theta[:, 0], edu, a_1) 
     y_t = all_w[:,0] * h_t
+    
     
     c_t, a_t, _ = Economic.consumption_asset_cashInHand(x_t, y_t, a_1, type = 'working')
     # a_t = (1.0-x_t)*(y_t - income_tax(y_t)- social_security_tax(y_t)+ a_1)*(1+R)
@@ -130,6 +133,9 @@ class Model(nn.Module):
     all_y[:,0] = y_t
     all_c[:, 0] = c_t
     all_a[:,1] = a_t
+    
+    all_x[:, 0] = x_t
+    # all_xstd[:, 0] = x_std
     
     
     # loop over years until early retirement,
@@ -149,6 +155,8 @@ class Model(nn.Module):
       all_h[:, i] = h_t
       all_a[:,i+1] = a_t
       all_c[:,i] = c_t
+      all_x[:, i] = x_t
+      # all_xstd[:, i] = x_std
     
 
 
@@ -249,7 +257,7 @@ class Model(nn.Module):
       all_c[:,i] = c_t
 
   
-    return  all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y
+    return  all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y, all_x
      
       
       
