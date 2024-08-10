@@ -214,7 +214,7 @@ def cal_regu_term_two_before_after(model: Model):
 
 
   
-def total_utility(c_t, c_t_ER, pr_bar, pr_t, h_t, phi, psi, epoch, s_writer, args, mode = 'train' ):
+def total_utility(c_t, c_t_ER, pr_bar, pr_t, h_t, epoch, s_writer, args, mode = 'train' ):
 
     
   device = c_t.device
@@ -222,6 +222,9 @@ def total_utility(c_t, c_t_ER, pr_bar, pr_t, h_t, phi, psi, epoch, s_writer, arg
   dummy_h = torch.zeros_like(c_t_ER[:, :,0]).to(device)
   i_ER = Economic.T_ER - Economic.AGE_0
   i_LR = Economic.T_LR - Economic.AGE_0
+  
+  phi = args.phi
+  psi = args.psi
   
   
   
@@ -233,7 +236,8 @@ def total_utility(c_t, c_t_ER, pr_bar, pr_t, h_t, phi, psi, epoch, s_writer, arg
   utility_rw = Economic.utility(c_t_ER[:,:, 1], dummy_h,  phi, psi, BETA_t[i_ER: i_LR+1])
   utility_rr = Economic.utility(c_t_ER[:,:, 2], dummy_h,  phi, psi, BETA_t[i_ER: i_LR+1])
   utility_LR = (1-pr_bar) * ( (1-pr_t) * utility_ww + pr_t * utility_rw )  +  pr_bar * (utility_rr)
-  
+  # print(psi)
+  # print(phi)
 
   utility_D = Economic.utility(c_t[:,i_LR+1:], h_t[:,i_LR+1:], phi, psi, BETA_t[i_LR+1:])
   
@@ -258,7 +262,7 @@ def loss_function(model :Model, c_t, c_t_ER, pr_bar, pr_t ,h_t, epoch, s_writer,
   # avg_work_hour_55 = h_t[:, 55 - Economic.AGE_0].mean()
   # prcentage_working_60 = (h_t[:,60 - Economic.AGE_0] > 0).float().mean()
 
-  util = total_utility( c_t, c_t_ER, pr_bar, pr_t, h_t,model.phi, model.psi, epoch, s_writer, args) 
+  util = total_utility( c_t, c_t_ER, pr_bar, pr_t, h_t,epoch, s_writer, args) 
   if args.reg_mode == 'each10':
       cal_regu_term = cal_regu_term_each10
   elif args.reg_mode == 'last_year':
