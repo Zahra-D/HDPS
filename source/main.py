@@ -115,7 +115,7 @@ def main(args):
                     
                     save_checkpoint(model, optimizer, saved_model_dir, epoch)
 
-            save_checkpoint(model, optimizer, saved_model_dir, epoch)
+            save_checkpoint(model, optimizer, saved_model_dir, epoch+1)
 
 
 

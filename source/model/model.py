@@ -257,7 +257,8 @@ class Model(nn.Module):
       all_c[:,i] = c_t
 
   
-    return  all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y, all_x
+    return  all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y
+    
      
       
       

@@ -11,7 +11,7 @@ class Economic:
     
     #generating samples
     P_EDU = 0.190156
-    J = 10000000
+    J = 1000000
     
     SIGMA_e = torch.sqrt(torch.tensor(.02601))
     THETA_0 = 0

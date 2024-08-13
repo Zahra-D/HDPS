@@ -254,7 +254,7 @@ def loss_meta(h_t):
   
 
   
-def loss_function(model :Model, c_t, c_t_ER, pr_bar, pr_t ,h_t, epoch, s_writer, args):
+def loss_function(model :Model, c_t, c_t_ER, pr_bar, pr_t ,h_t, epoch, g_step, s_writer, args):
   # avg_work_hour_55 = h_t[:, 55 - Economic.AGE_0].mean()
   # prcentage_working_60 = (h_t[:,60 - Economic.AGE_0] > 0).float().mean()
 
@@ -274,7 +274,7 @@ def loss_function(model :Model, c_t, c_t_ER, pr_bar, pr_t ,h_t, epoch, s_writer,
   l_U = 1 - (l_G)
   l_M = 100
   reg_term = l_G * general_regu 
-  loss =  -1 * l_U * util.mean() + reg_term # l_M * (abs(avg_work_hour_55 - Economic.M_D1))
+  loss =  -1 * l_U * util.mean() + l_G * reg_term # l_M * (abs(avg_work_hour_55 - Economic.M_D1))
   # loss =  l_M * (avg_work_hour_55 - Economic.M_D1)
 
   # print( l_M * (abs(avg_work_hour_55 - Economic.M_D1) + abs(prcentage_working_60 - Economic.M_D2)))
@@ -283,7 +283,8 @@ def loss_function(model :Model, c_t, c_t_ER, pr_bar, pr_t ,h_t, epoch, s_writer,
   
 
   s_writer.add_scalar('Loss/reg_term',reg_term.detach().cpu(), epoch)
-  s_writer.add_scalar('Loss/util_term',util.mean().detach().cpu(), epoch)
+  s_writer.add_scalar('Loss/util_term_E',util.mean().detach().cpu(), epoch)
+  s_writer.add_scalar('Loss/util_term_G',util.mean().detach().cpu(), g_step)
   # s_writer.add_scalar('Meta/avg_work_hour_55',avg_work_hour_55.detach().cpu(), epoch)
   # s_writer.add_scalar('Meta/prcentage_working_60',prcentage_working_60.detach().cpu(), epoch)
   # s_writer.add_scalar('Meta/phi',model.phi.detach().cpu(), epoch)

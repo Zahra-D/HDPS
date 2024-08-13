@@ -11,9 +11,9 @@ def train_step(model: Model, dataloader, epoch, s_writer, optimizer, device, arg
 
     for batch_idx, batch in enumerate(train_iterator):
         
-        if epoch == 1:
-            if batch_idx == 5:
-                pass
+        # if epoch == 1:
+        #     if batch_idx == 5:
+        #         pass
 
         theta_t_, w_t_, edu_ = batch
         w_t_ = w_t_.to(device)
@@ -24,7 +24,7 @@ def train_step(model: Model, dataloader, epoch, s_writer, optimizer, device, arg
 
         
         optimizer.zero_grad()
-        all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y = model(theta_t_.to(device), edu_.to(device), a_1.to(device),w_t_)
+        all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y, x = model(theta_t_.to(device), edu_.to(device), a_1.to(device),w_t_)
         
         
         # if (all_c[:, ] <= 0).any():
@@ -43,13 +43,13 @@ def train_step(model: Model, dataloader, epoch, s_writer, optimizer, device, arg
         #     if torch.isnan(param).any():
         #         print(f"Gradient of parameter '{name}' contains NaN")
         #         nan_gradients = True
+        global_step =epoch * Economic.J // args.batch_size + batch_idx
 
-
-        loss = loss_function(model, all_c, all_c_ER, all_pr_bar, all_pr, all_h, epoch, s_writer, args)
+        loss = loss_function(model, all_c, all_c_ER, all_pr_bar, all_pr, all_h,  epoch, int(global_step), s_writer, args)
 
 
         
-        s_writer.add_scalar('Loss/all', loss.item(), epoch)
+        s_writer.add_scalar('Loss/all', loss.item(), int(global_step))
 
         loss.backward()
         optimizer.step()
@@ -101,7 +101,7 @@ def evaluation(model, dataloader, device):
             len_batch = len(batch[0])
             a_1 = torch.tensor([Economic.A_1]* len_batch)
             
-            a_t, c_t_e, all_c_ER, pr, all_pr, h_t, y_t  = model(theta_t.to(device), edu.to(device), a_1.to(device),w_t)
+            a_t, c_t_e, all_c_ER, pr, all_pr, h_t, y_t, x  = model(theta_t.to(device), edu.to(device), a_1.to(device),w_t)
             all_c_r = (1-pr) * ( all_pr * all_c_ER[:,:,1] + (1-all_pr) * all_c_ER[:,:,0]) +  pr * all_c_ER[:,:,2]
             
             c_t = torch.concat([c_t_e[:, :Economic.T_ER - Economic.AGE_0], all_c_r,c_t_e[:, Economic.T_LR - Economic.AGE_0+1:] ], dim = -1)

@@ -20,12 +20,13 @@ alphas = [1e-1, 1e-2, 1e-3, 1e-4]
 phi = 0.006
 
 # for epoch  in range(0,1000, 100):
-for epoch in [999]:
-    for alpha in alphas:
+for alpha in alphas:
+    for epoch in [50]:
+    
         
 # /home/zdelbari/HDPS/source/Experiments/2year_reg/multiple_r--with_tax--gumbel--phi_0.0005--tau_0.01--hard_gumbel/base_model_with_regu_wb_two_years_10HiddenUnits_seed92_phi0.0005/10000_batch_size/PSI0.04/lambda0.01/AdamW_lr:0.001/model/epoch999/model.pt
         # base_dir  = f'./Experiments/multiple_r--with_tax--gumbel--phi_{phi}--tau_{alpha}--hard_gumbel/base_model_with_regu_wb_each10_10HiddenUnits_seed92_phi{float(phi)}/10000_batch_size/PSI0.04/lambda0.01/AdamW_lr:0.001'
-        base_dir = f'./Experiments/2year_reg_j100k/multiple_r--with_tax--gumbel--phi_0.0006--tau_{alpha}--hard_gumbel/base_model_with_regu_wb_two_years_10HiddenUnits_seed92_phi0.0006/10000_batch_size/PSI0.04/lambda0.01/AdamW_lr:0.001'
+        base_dir = f'./Experiments/2year_reg_j1Mlr_0.1/multiple_r--with_tax--gumbel--phi_0.0006--tau_{alpha}--hard_gumbel/base_model_with_regu_wb_two_years_10HiddenUnits_seed92_phi0.0006/10000_batch_size/PSI0.04/lambda0.1/AdamW_lr:0.1'
         model = torch.load(f'{base_dir}/model/epoch{epoch}/model.pt')
         model.to(device)
         
@@ -47,11 +48,11 @@ for epoch in [999]:
                 
         
         
-        # Histogram_Retirement_Age(all_p , all_edu, plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
-        # Histograms_Individual_Ages(all_a, all_edu, 'Asset', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
-        # Histograms_Individual_Ages(all_c, all_edu, 'Consumption', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
-        # Histograms_Individual_Ages(all_h, all_edu, 'Workhour', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
-        # Histograms_Individual_Ages(all_y, all_edu, 'Income', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
+        Histogram_Retirement_Age(all_p , all_edu, plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
+        Histograms_Individual_Ages(all_a, all_edu, 'Asset', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
+        Histograms_Individual_Ages(all_c, all_edu, 'Consumption', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
+        Histograms_Individual_Ages(all_h, all_edu, 'Workhour', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
+        Histograms_Individual_Ages(all_y, all_edu, 'Income', plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
         
        
         # policy_function_plot_cashInHand(model, all_edu, 'workhour', all_a, all_w, device, plots_base_dir = f'{base_dir}/plot', epoch = epoch, save = True)
