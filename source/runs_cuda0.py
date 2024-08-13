@@ -38,7 +38,7 @@ for phi in phis:
                         '--cuda_no', '0',
                         '--reg_mode', 'two_years',
                         '--num_epochs', '100',
-                        '--lmbd', '0',
+                        # '--lmbd', '0',
                         '--save_interval_epoch', '1',
                         '--lr', '1e-1',
                         
