@@ -48,7 +48,7 @@ class WorkYearBlock(nn.Module):
     self.task_a_w = TaskBlock(num_hidden_node=num_hidden_node, num_output=1, activation_funcion=self.activation_function, task_layer=task_layer_a_w)
 
     # # h is categorical with 4 categories and for the final result we will get mean of all the four output
-    self.task_h = TaskBlock(num_hidden_node=num_hidden_node, num_output=4, activation_funcion=self.activation_function,task_layer=task_layer_h )
+    self.task_h = TaskBlock(num_hidden_node=num_hidden_node, num_output=1, activation_funcion=self.activation_function,task_layer=task_layer_h )
 
 
 
@@ -128,12 +128,17 @@ class WorkYearBlock(nn.Module):
 
     x_h = self.task_h(x)
     # x_h = (self.a_activation(x_h) * self.h).squeeze(-1)
-    x_h = F.softmax(x_h, dim=-1)
+    # x_h = F.softmax(x_h, dim=-1)
+    # x_h = torch.einsum('bh,h->b',x_h, Economic.H.to(device))
+    
+    
+    x_h = self.a_activation(x_h)
     
 
      
     # one_hot[torch.arange(B).to(device), torch.argmax(x_h, dim = 1)] = self.h[torch.argmax(x_h, dim = 1)]
-    x_h = torch.einsum('bh,h->b',x_h, Economic.H.to(device))
+    x_h = torch.einsum('bh,h->b',x_h, Economic.H.to(device)[-1].unsqueeze(dim = 0))
+
     # x_h = x_h * self.h
 
 
@@ -146,7 +151,7 @@ class WorkYearBlock(nn.Module):
       x_x_r = self.task_a_r(x)
       x_x_r = self.a_activation(x_x_r)
       # print(F.softmax(self.task_pr(x), dim= -1).shape)
-      logit = torch.log(F.softmax(self.task_pr(x), dim= -1))
+      # logit = torch.log(F.softmax(self.task_pr(x), dim= -1))
       pr = self.gumbel( self.task_pr(x), hard=self.hard_gumbel, tau=self.alpha_pr)
       # print(self.hard_gumbel)
       # pr = self.a_activation(self.alpha_pr * self.task_pr(x))

@@ -23,7 +23,7 @@ import time
 
 
 phis = [ 0.0006]
-alphas = [1e-1, 1e-2, 1e-3, 1e-4]
+alphas = [1e-1,2e-1, 1e-2, 1.0, 5e-1]
 
 hyperparameter_sets = []
 for phi in phis:
@@ -31,14 +31,16 @@ for phi in phis:
 
         # for psi in psis:
             h_set = [
-                        '--experiment_title', f'10M_woREG/multiple_r--with_tax--gumbel--phi_{phi}--tau_{alpha}--psi{0.01}--hard_gumbel',
+                        '--experiment_title', f'single_H_lr0.1_j1M_100epoch/multiple_r--with_tax--gumbel--phi_{phi}--tau_{alpha}--hard_gumbel',
                         '--alpha_pr', f'{alpha}',
                         '--phi' , f'{phi}',
                         '--hard_gumbel', 
                         '--cuda_no', '0',
                         '--reg_mode', 'two_years',
-                        '--psi', '0.01'
-                        # '--batch_size', '10000',
+                        '--num_epochs', '100',
+                        '--lmbd', '0',
+                        '--save_interval_epoch', '1',
+                        '--lr', '1e-1',
                         
                         
                         ]

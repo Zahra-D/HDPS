@@ -46,8 +46,8 @@ class Model(nn.Module):
       'work_retirement_blocks' : nn.ModuleDict({ f'year_{i}': EarlyRetiermentBlock(year=i, num_hidden_node_r=num_hidden_node_r, num_hidden_node_w= num_hidden_node_w, alpha_pr=alpha_pr , hard_gumbel=hard_gumbel, layers_dict = layers_dict) for i in range(Economic.T_ER, Economic.T_LR+1) }),
       'retirement_blocks' : nn.ModuleDict({ f'year_{i}': RetirementYearBlock(year=i, num_hidden_unit=num_hidden_node_r) for i in range(Economic.T_LR+1, Economic.T_D+1) })})
 
-    self.phi = nn.Parameter(torch.tensor(phi_init))
-    self.psi = nn.Parameter(torch.tensor(psi_init))
+    # self.phi = nn.Parameter(torch.tensor(phi_init))
+    # self.psi = nn.Parameter(torch.tensor(psi_init))
     
     
     
@@ -202,7 +202,7 @@ class Model(nn.Module):
       a_w_t = outputs['a_w_tp']
       a_r_t = outputs['a_r_tp']
       
-      all_pr[:,i-i_ER+1] =  outputs['pr_t']
+      all_pr[:,i-i_ER] =  outputs['pr_t']
       
       
     

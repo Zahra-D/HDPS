@@ -156,7 +156,7 @@ class Economic:
     def utility(c_t, h_t , phi, psi, BETA_t):
         consumption_utility =  (c_t**(1-Economic.GAMMA))/(1-Economic.GAMMA)
         work_hour_disutility = ((h_t/Economic.H[-1]) ** (1+1/Economic.ETA))/(1+1/Economic.ETA)
-        working_disutility =  (h_t > 50).int()
+        working_disutility =  (h_t > 10).int()
         utility = (BETA_t * (consumption_utility - phi * working_disutility - psi * work_hour_disutility))
         return utility
 
