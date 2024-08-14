@@ -3,6 +3,7 @@ from source.utils.imports import *
 from source.economic import Economic
 from source.utils.utils import loss_function
 from source.model.model import Model
+import math
 
 def train_step(model: Model, dataloader, epoch, s_writer, optimizer, device, args):
     
@@ -11,9 +12,20 @@ def train_step(model: Model, dataloader, epoch, s_writer, optimizer, device, arg
 
     for batch_idx, batch in enumerate(train_iterator):
         
-        if epoch == 1:
-            if batch_idx == 5:
-                pass
+        global_step = (int(Economic.J // args.batch_size)+1) * epoch + batch_idx
+        if global_step % args.per_step_update_h == 0:
+            model.discrete_setting = {'alpha_pr':model.discrete_setting['alpha_pr'],
+                        'alpha_h': math.exp(-1* args.r_h * global_step),
+                        'hard_gumbel': model.discrete_setting['hard_gumbel'],}
+            
+            
+        if global_step % args.per_step_update_pr == 0:
+            model.discrete_setting = {'alpha_pr':math.exp(-1* args.r_pr * global_step),
+                        'alpha_h': model.discrete_setting['alpha_h'],
+                        'hard_gumbel': model.discrete_setting['hard_gumbel'],}
+            
+            
+        
 
         theta_t_, w_t_, edu_ = batch
         w_t_ = w_t_.to(device)
@@ -21,10 +33,12 @@ def train_step(model: Model, dataloader, epoch, s_writer, optimizer, device, arg
         len_batch = len(batch[0])
         
         a_1 = torch.tensor([Economic.A_1]* len_batch, dtype=torch.float32)
+        
+        
 
         
         optimizer.zero_grad()
-        all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y = model(theta_t_.to(device), edu_.to(device), a_1.to(device),w_t_)
+        all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y, all_xt = model(theta_t_.to(device), edu_.to(device), a_1.to(device),w_t_)
         
         
         # if (all_c[:, ] <= 0).any():
@@ -45,11 +59,15 @@ def train_step(model: Model, dataloader, epoch, s_writer, optimizer, device, arg
         #         nan_gradients = True
 
 
-        loss = loss_function(model, all_c, all_c_ER, all_pr_bar, all_pr, all_h, epoch, s_writer, args)
+        loss = loss_function(model, all_c, all_c_ER, all_pr_bar, all_pr, all_h,global_step, epoch, s_writer, args)
 
 
         
-        s_writer.add_scalar('Loss/all', loss.item(), epoch)
+        s_writer.add_scalar('Loss/all_E', loss.item(), epoch)
+        s_writer.add_scalar('Loss/all_G', loss.item(), global_step)
+        s_writer.add_scalar('HP/alpha_pr', model.discrete_setting['alpha_pr'], global_step)
+        s_writer.add_scalar('HP/alpha_h', model.discrete_setting['alpha_h'], global_step)
+        s_writer.add_scalar('HP/lr_G', optimizer.param_groups[0]['lr'] , global_step) 
 
         loss.backward()
         optimizer.step()

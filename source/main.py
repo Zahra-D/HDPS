@@ -5,6 +5,7 @@ from model.model import Model
 from args import get_parser
 from economic import Economic
 from train.train import train_step
+import torch.optim.lr_scheduler as lr_scheduler 
 
 
 
@@ -77,6 +78,11 @@ def main(args):
                 
             ]
             optimizer = optimizer_func(param_groups, lr=lr)
+            if args.lr_scheduler == 'exp':
+                scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=args.lr_sch_gamma_decay)  
+            elif args.lr_scheduler == 'step':
+                scheduler = lr_scheduler.StepLR(optimizer, step_size=args.lr_sch_step_size, gamma=args.lr_sch_step_decay)  
+
             model.to(device)
             
             base_dir  = pathlib.Path(
@@ -108,14 +114,23 @@ def main(args):
                 # if epoch == 400:
                 #     optimizer.add_param_group({'params': model.phi, 'lr': args.lr_phi})
                 #     optimizer.add_param_group({'params': model.psi, 'lr': args.lr_psi})
-                print(epoch)
+                # print(epoch)``
+                
                 train_step(model, dataloader_train, epoch, writer, optimizer, device, args)
+                current_lr = optimizer.param_groups[0]['lr']  
+                writer.add_scalar('HP/lr_E', current_lr, epoch) 
+                
+                if epoch >= args.start_lr_decay:
+                    scheduler.step()
+                 
+    
+
                 
                 if (epoch%args.save_interval_epoch)==0:
                     
-                    save_checkpoint(model, optimizer, saved_model_dir, epoch)
+                    save_checkpoint(model, optimizer, scheduler, saved_model_dir, epoch)
 
-            save_checkpoint(model, optimizer, saved_model_dir, epoch)
+            save_checkpoint(model, optimizer,scheduler, saved_model_dir, epoch+1)
 
 
 

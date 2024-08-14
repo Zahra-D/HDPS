@@ -13,9 +13,6 @@ class WorkYearBlock(nn.Module):
   def __init__(self, num_input=1,
                num_hidden_node = 10,
                mode = 'working_year',
-               alpha_h = 1,
-               alpha_pr= None,
-               hard_gumbel = True,
                layers_dict=None):
     super().__init__()
     
@@ -35,10 +32,9 @@ class WorkYearBlock(nn.Module):
     
     #it could be either working_years or early_retirement_years
     self.mode = mode
-    self.hard_gumbel = hard_gumbel
     self.activation_function = nn.GELU()
     
-    self.alpha_h = alpha_h
+
     
     #initializing the layers
     #first two layers of NN that are  general layers
@@ -73,7 +69,7 @@ class WorkYearBlock(nn.Module):
           self.task_a_r = TaskBlock(num_hidden_node=num_hidden_node, num_output=1, activation_funcion=self.activation_function, task_layer=task_layer_a_r)
           
           #r fr fr  free (early_retirement 10)
-          self.alpha_pr = alpha_pr
+
           
           self.task_pr = TaskBlock(num_hidden_node=num_hidden_node, num_output=2,  activation_funcion=self.activation_function, task_layer=task_layer_pr)
       
@@ -84,7 +80,7 @@ class WorkYearBlock(nn.Module):
 
 
   @dimension_corrector
-  def forward(self, theta, edu, a, y = None, b = None):
+  def forward(self, theta, edu, a, y = None, b = None, discrete_setting=None):
     """
     Forward pass of the neural network.
 
@@ -138,7 +134,7 @@ class WorkYearBlock(nn.Module):
     # x_h = (self.a_activation(x_h) * self.h).squeeze(-1)
     # x_h = F.softmax(x_h, dim=-1)
     
-    x_h = self.gumbel( torch.log(F.softmax(x_h, dim=-1)+1e-8), hard=self.hard_gumbel, tau=self.alpha_h)
+    x_h = self.gumbel( torch.log(F.softmax(x_h, dim=-1)+1e-8), hard=discrete_setting['hard_gumbel'], tau=discrete_setting['alpha_h'])
     
 
      
@@ -156,8 +152,8 @@ class WorkYearBlock(nn.Module):
       x_x_r = self.task_a_r(x)
       x_x_r = self.a_activation(x_x_r)
       # print(F.softmax(self.task_pr(x), dim= -1).shape)
-      # logit = torch.log(F.softmax(self.task_pr(x), dim= -1))
-      pr = self.gumbel( self.task_pr(x), hard=self.hard_gumbel, tau=self.alpha_pr)
+      logit = torch.log(F.softmax(self.task_pr(x), dim= -1) + 1e-8)
+      pr = self.gumbel(logit, hard=discrete_setting['hard_gumbel'], tau=discrete_setting['alpha_pr'])
       # print(self.hard_gumbel)
       # pr = self.a_activation(self.alpha_pr * self.task_pr(x))
       return x_h, x_x_w.squeeze(), pr, x_x_r.squeeze()
