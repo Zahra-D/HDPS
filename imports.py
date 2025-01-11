@@ -1,5 +1,4 @@
-
-
+## Importing required libraries
 
 
 import numpy as np
@@ -18,16 +17,7 @@ import random
 
 from sympy import Piecewise, symbols
 
-
-
-
-
-
-
 # %%
-
-
-
 
 import pickle
 from tqdm import tqdm
