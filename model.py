@@ -1,8 +1,15 @@
-from imports import *
+##### Defninng DNN model --------------------
 
+
+from imports import *
 from Parameters import *
 from functions import *
 
+
+## Helper Functions  --------------------
+
+
+# Avoid Dimension mismatch: Ensures that all input tensors have at least two dimensions (1D -> 2D if needed)
 
 def dimension_corrector(func):
   def wrapper(*args, **kwargs):
@@ -24,30 +31,31 @@ def dimension_corrector(func):
   return wrapper
 
 
+## Task-Specific DNN Block --------------------
+
 
 class TaskBlock(nn.Module):
 
   def __init__(self, num_hidden_node=10, num_output = 1, activation_funcion = nn.GELU(), task_layer = None):
     super().__init__()
-        # third layer which is task specific layer, one for h and one for a
-    # third layer which is task specific layer, one for h and one for a
+
+    # task_layer: Task specific layer category
     
     if not task_layer:
+      # If task_layer is not provided, a linear layer is defined.
       self.task_layer = nn.Linear(num_hidden_node,num_hidden_node, bias=True)
       torch.nn.init.xavier_uniform_(self.task_layer.weight)
     else:
+      # If task_layer is provided, it replaces the default task-specific layer.
       self.task_layer = task_layer 
+       
+    # year_layer: Task-Age specific layer category is added to task_layer
     
-    
-    #forth layer that dedicated to year, again one for h and one for a
     self.year_layer= nn.Linear(num_hidden_node,num_output)
     torch.nn.init.xavier_uniform_(self.year_layer.weight)
-    
     self.activation_function = activation_funcion
-    
 
-    
-    
+  # Forward Pass: DNN Model -> Task_Layer -> Activation FUnction -> Year_Layer (w. GELU AF)
   def forward(self, x):
         
     x = self.task_layer(x)
@@ -55,84 +63,70 @@ class TaskBlock(nn.Module):
     x = self.year_layer(x)
     return x
 
-    
-    
+  
+## Working Ages Block --------------------
 
-
+  
+  # Also define Early retienemt ages as mode of this block, later define its foraward using this.
     
-    
-    
-    
-
-class WorkYearBlock(nn.Module):
+  class WorkYearBlock(nn.Module):
 
   def __init__(self, num_input=1, num_hidden_node = 10, mode = 'working_year', alpha_pr= 1, layers_dict=None):
     super().__init__()
-    
-    gen_2 = nn.Linear(num_hidden_node,num_hidden_node)
-    torch.nn.init.xavier_uniform_(gen_2.weight)
 
+    # Working Years: All Layers Ater First
+
+    # Types of Layers
+
+    # Batch normalization layer
+    self.bn_input = nn.BatchNorm1d(num_input)
+    # General layer 2
+    gen_2 = nn.Linear(num_hidden_node,num_hidden_node)     
+    torch.nn.init.xavier_uniform_(gen_2.weight)
     general_layer_2 = layers_dict['general2'] if 'general2' in layers_dict else gen_2
-    task_layer_h = layers_dict['task_h'] if 'task_h' in layers_dict else None
-    task_layer_a_w = layers_dict['task_aw'] if 'task_aw' in layers_dict else None
+    # Work Hour task, conditional on wokring this period
+    task_layer_h = layers_dict['task_h'] if 'task_h' in layers_dict else None     
+    # Asset next period, conditional on working this period
+    task_layer_a_w = layers_dict['task_aw'] if 'task_aw' in layers_dict else None 
+    # Asset next period, conditional on retiring this period
     task_layer_a_r = layers_dict['task_ar'] if 'task_ar' in layers_dict else None
+    # Probaility of becoming retired this period
     task_layer_pr = layers_dict['task_pr'] if 'task_pr' in layers_dict else None
     
+    # Activation Functions
+
+    self.activation_function = nn.GELU()
+    self.a_activation = nn.Sigmoid() # For Asseet (0 < a/Total resource  < 1)
+    self.gumbel = F.gumbel_softmax # For retiermnet (Discrte choice)
+    self.h = h_grid # For h grid
+
+    # Mode: eaither working_years or early_retirement_years (based on input) 
     
-    # if mode == "early_retirement_year":
-    #   num_input += 1 # there should be benefit as well
-    self.bn_input = nn.BatchNorm1d(num_input)
-    
-    #it could be either working_years or early_retirement_years
     self.mode = mode
     
-    self.activation_function = nn.GELU()
-    
-    #initializing the layers
-    #first two layers of NN that are  general layers
+    # Building the Layers Architecture
+
+    # General Layers: general_layer_1,2
     self.general_layer_1 = nn.Linear(num_input, num_hidden_node)
     torch.nn.init.xavier_uniform_(self.general_layer_1.weight)
-
-
     self.general_layer_2 = general_layer_2
-
-
-
-
-
- 
+    # Task a_w: Task Layer Asset, conditional on working: task_a_w
     self.task_a_w = TaskBlock(num_hidden_node=num_hidden_node, num_output=1, activation_funcion=self.activation_function, task_layer=task_layer_a_w)
-
-    # # h is categorical with 4 categories and for the final result we will get mean of all the four output
+    # Task h: Hours of work (categorical with 4 categories and for the final result we will get mean of all the four output)
     self.task_h = TaskBlock(num_hidden_node=num_hidden_node, num_output=4, activation_funcion=self.activation_function,task_layer=task_layer_h )
-
-
-
-
-    # activation function, we can use a single ReLU wherever it is needed.
-
-    self.a_activation = nn.Sigmoid()
-    self.gumbel = F.gumbel_softmax
-    self.h = torch.tensor([0.0,1300.0,2080.0,2860.0])
-    
-    
+    # Extra Task Layer for Early retierment Years
     if mode == 'early_retirement_year':
-          
+          # Task a_w: Task Layer Asset, conditional on becoming retierd
           self.task_a_r = TaskBlock(num_hidden_node=num_hidden_node, num_output=1, activation_funcion=self.activation_function, task_layer=task_layer_a_r)
-          
-          #r fr fr  free (early_retirement 10)
-          self.alpha_pr = alpha_pr
-          
+          # Task pr: probailibity of beconimg retierd
+          self.alpha_pr = alpha_pr # Paramter of f(pr)
           self.task_pr = TaskBlock(num_hidden_node=num_hidden_node, num_output=2,  activation_funcion=self.activation_function, task_layer=task_layer_pr)
-      
-    
-    
 
-
-
+  # Forward Pass: x -> General Layers of 1 & 2 -> x_x_w,x_h(,x_x_r,pr)
 
   @dimension_corrector
   def forward(self, theta, edu, a, y = None, b = None):
+    
     """
     Forward pass of the neural network.
 
@@ -146,149 +140,114 @@ class WorkYearBlock(nn.Module):
             - x_a: Output tensor for the 'a' task, the predict asset for this year .
     """
 
-
-
-    
+    # Adjusting number of state variables
     
     if isinstance(y, torch.Tensor):
       if isinstance(b, torch.Tensor):
         x = torch.concat([theta, edu, a, y, b], dim = -1)
       else:
         x = torch.concat([theta, edu, a, y], dim = -1)
-      
-      
     else:
       x = torch.concat([theta, edu, a], dim = -1)
-    
-    
-    # d = self.device
+
+    # Device
     device = x.device
 
+    # General Layers
     x = self.bn_input(x)
-
     x = self.general_layer_1(x)
     x = self.activation_function(x)
     x = self.general_layer_2(x)
     x = self.activation_function(x)
-
-
-
+    # Task Layer:a_w
     x_x_w = self.task_a_w(x)
     x_x_w = self.a_activation(x_x_w)
-
-    
-    
-
-
-
-
+    # Task Layer: h
     x_h = self.task_h(x)
-    # x_h = (self.a_activation(x_h) * self.h).squeeze(-1)
     x_h = F.softmax(x_h, dim=-1)
-    
-
     self.h = self.h.to(device)
-    # one_hot[torch.arange(B).to(device), torch.argmax(x_h, dim = 1)] = self.h[torch.argmax(x_h, dim = 1)]
-    x_h = torch.einsum('bh,h->b',x_h, self.h)
+      # Method. Use weighted mean as approximation
+    x_h = torch.einsum('bh,h->b',x_h, self.h) 
+      # Method. Use Max pf probabilities
+    # one_hot[torch.arange(B).to(device), torch.argmax(x_h, dim = 1)] = self.h[torch.argmax(x_h, dim = 1)] 
     # x_h = x_h * self.h
-
-
-
     if self.mode == 'early_retirement_year':
-
-
-    
-    
+      # Task Layer: a_r
       x_x_r = self.task_a_r(x)
       x_x_r = self.a_activation(x_x_r)
-      
+      # Task Layer: p_r
+        # Method. Soft & Hard Gambul
       pr = self.gumbel(self.task_pr(x), hard=True)
-      # pr = self.a_activation(self.alpha_pr * self.task_pr(x))
+        # Method. Temperute Parameter?
+      # pr = self.a_activation(self.alpha_pr * self.task_pr(x)) 
       return x_h, x_x_w.squeeze(), pr, x_x_r.squeeze()
       
-
-
-
     return x_h, x_x_w.squeeze()
   
-  
+
+## Retierment Ages Block --------------------
+
+
 class RetirementYearBlock(nn.Module):
     
     def __init__(self, num_hidden_unit = 5):
         super().__init__()
-        
 
-        
-        # self.year = year
-        
+        # Layers
+
+          # Method. Take year as input, same DNN for all years
+        # Batch normalization layer
         self.bn = nn.BatchNorm1d(3)
-        
+        # General Layers
         self.layer_1 = nn.Linear(3, num_hidden_unit)
         torch.nn.init.xavier_uniform_(self.layer_1.weight)
-
-        
         self.layer_2 = nn.Linear(num_hidden_unit, 1)
         torch.nn.init.xavier_uniform_(self.layer_2.weight)
+          # Method. Different DNN for differenet years
+        # self.year = year
 
-        
-        
+        # Activation Functions
+      
         self.activation_function = nn.GELU()
         self.x_activation = nn.Sigmoid()
-        
-        
+
+    # Forward Pass: X (asset,pension benefit,year) -> 2 General Layers -> asset next year
+  
     @dimension_corrector
     def forward(self, a, b, t):
+      
       x = torch.concat([a, b, t], dim = -1)
       x = self.bn(x)
-      
       x = self.layer_1(x)
       x = self.activation_function(x)
-      
       x = self.layer_2(x)
       x = self.x_activation(x)
       
-
-      
- 
-      
       return x.squeeze()
-        
-   
+
+
+## Early Retierment Ages Block --------------------
+
+  
 class EarlyRetiermentBlock(nn.Module):
   
       def __init__(self, year=61,retirement_block=None, num_hidden_node_w = 10, num_hidden_node_r = 5, alpha_pr = 1, layers_dict=None):
         super().__init__()
         
-        assert (year >= 62) and (year<=70)
+        assert (year >= T_ER) and (year <= T_LR) # The years which the worker has to take retiement decision
         
         self.working_block = WorkYearBlock(num_input=year - AGE_0 + 3, num_hidden_node = num_hidden_node_w,  mode= 'early_retirement_year', alpha_pr=alpha_pr, layers_dict=layers_dict)
-        self.retirement_block = retirement_block
-        
+        self.retirement_block = retirement_block        
         self.year= year
         
-        
-        
-        
-        
-        
-        
-
       def forward(self, theta, edu, a_w_t, a_r_t, all_y, w_t, pr_bar_t, b_bar_t):
         
         h_t, x_ww, pr_t, x_rw = self.working_block(theta, edu, a_w_t, all_y) 
         t = torch.ones_like(a_r_t).to(a_r_t.device) * self.year
         x_rr = self.retirement_block(a_r_t, b_bar_t, t )
-          
-          
 
         y_t = w_t * h_t 
-        
-      
-  
-        
-        #calculating a_ww a_rw a_rr
-        
-        #to do tax 
+
         c_ww_t = x_ww * (y_t - income_tax(y_t) -social_security_tax(y_t) + a_w_t) + 1e-8
         a_ww_tp = (1.0 - x_ww)*((y_t) - income_tax(y_t) - social_security_tax(y_t) + a_w_t)* (1+R) 
         
@@ -315,48 +274,12 @@ class EarlyRetiermentBlock(nn.Module):
         #update b_bar
         b_bar_tp = pr_bar_t * b_bar_t + (1-pr_bar_t) * b_t
         
-
+        return {'a_w_tp':a_ww_tp,'a_r_tp': a_r_tp,'a_tp': a_tp,'c_ww_t': c_ww_t,'c_rw_t': c_rw_t,'c_rr_t': c_rr_t,          
+                'y_t': y_t,'h_t': h_t,'pr_t': pr_t[:,0],'pr_bar_tp': pr_bar_tp,'b_bar_tp': b_bar_tp}
+         
         
-        return {'a_w_tp':a_ww_tp,
-                'a_r_tp': a_r_tp,
-                
-                
-                
-                # 'c_t':c_t,
-                'a_tp': a_tp,
-                
-                
-                # 'a_ww_tp': a_ww_tp,
-                'c_ww_t': c_ww_t,
-                
-                # 'a_rw_tp': a_rw_tp,
-                'c_rw_t': c_rw_t,                
-
-                # 'a_rr_tp': a_rr_tp,
-                'c_rr_t': c_rr_t,
-                
-                'y_t': y_t,
-                'h_t': h_t,
-                'pr_t': pr_t[:,0],
-                'pr_bar_tp': pr_bar_tp, 
-
-                'b_bar_tp': b_bar_tp}
+## Full Model (All Blocks) --------------------
         
-        
-        
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
 
 class Model(nn.Module):
   
