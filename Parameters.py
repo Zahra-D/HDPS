@@ -51,7 +51,7 @@ R = 0.042
 
 ## Grids --------------------
 
-H = torch.tensor([0.0,1300.0,2080.0,2860.0]) #the defined work hours
+h_grid = torch.tensor([0.0,1300.0,2080.0,2860.0]) #the defined work hours
 
 ## Tax Function --------------------
 
