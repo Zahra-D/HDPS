@@ -65,6 +65,7 @@ W_b = torch.tensor(76200)
 BEND_POINTS_b = torch.tensor([0.9,0.32,0.15])
 BEND_POINTS_a = torch.tensor([6372,38422,76200])
 DELTA_t = torch.tensor([0.7, 0.75, 0.8, 0.866, 0.933, 1.00, 1.08, 1.16, 1.24])
+T_S = 35
 
 ## Simulation --------------------
 
@@ -72,5 +73,4 @@ J = 1000000
 
 ## ?
 
-T_S = 35
 T_R = 10
