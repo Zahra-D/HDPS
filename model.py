@@ -141,7 +141,6 @@ class TaskBlock(nn.Module):
     """
 
     # Adjusting number of state variables
-    
     if isinstance(y, torch.Tensor):
       if isinstance(b, torch.Tensor):
         x = torch.concat([theta, edu, a, y, b], dim = -1)
@@ -159,9 +158,9 @@ class TaskBlock(nn.Module):
     x = self.activation_function(x)
     x = self.general_layer_2(x)
     x = self.activation_function(x)
-    # Task Layer:a_w
-    x_x_w = self.task_a_w(x)
-    x_x_w = self.a_activation(x_x_w)
+    # Task Layer: 1-a_w'/resource) if work cond. on being in worker state
+    x_w_w = self.task_a_w(x)
+    x_w_w = self.a_activation(x_w_w)
     # Task Layer: h
     x_h = self.task_h(x)
     x_h = F.softmax(x_h, dim=-1)
@@ -172,17 +171,17 @@ class TaskBlock(nn.Module):
     # one_hot[torch.arange(B).to(device), torch.argmax(x_h, dim = 1)] = self.h[torch.argmax(x_h, dim = 1)] 
     # x_h = x_h * self.h
     if self.mode == 'early_retirement_year':
-      # Task Layer: a_r
-      x_x_r = self.task_a_r(x)
-      x_x_r = self.a_activation(x_x_r)
-      # Task Layer: p_r
+      # Task Layer: 1-a_r'(/resource) if retier cond. on being in worker state
+      x_r_w = self.task_a_r(x)
+      x_r_w = self.a_activation(x_r_w)
+      # Task Layer: x_pr probability of retieremnt conditional on being in worker state
         # Method. Soft & Hard Gambul
-      pr = self.gumbel(self.task_pr(x), hard=True)
+      x_pr = self.gumbel(self.task_pr(x), hard=True)
         # Method. Temperute Parameter?
       # pr = self.a_activation(self.alpha_pr * self.task_pr(x)) 
-      return x_h, x_x_w.squeeze(), pr, x_x_r.squeeze()
+      return x_h, x_w_w.squeeze(), x_pr, x_r_w.squeeze()
       
-    return x_h, x_x_w.squeeze()
+    return x_h, x_w_w.squeeze()
   
 
 ## Retierment Ages Block --------------------
@@ -211,7 +210,7 @@ class RetirementYearBlock(nn.Module):
         self.activation_function = nn.GELU()
         self.x_activation = nn.Sigmoid()
 
-    # Forward Pass: X (asset,pension benefit,year) -> 2 General Layers -> asset next year
+    # Forward Pass: X (asset,pension benefit,year) -> 2 General Layers -> 1-asset(/resource) next year
   
     @dimension_corrector
     def forward(self, a, b, t):
@@ -234,58 +233,76 @@ class EarlyRetiermentBlock(nn.Module):
       def __init__(self, year=61,retirement_block=None, num_hidden_node_w = 10, num_hidden_node_r = 5, alpha_pr = 1, layers_dict=None):
         super().__init__()
         
-        assert (year >= T_ER) and (year <= T_LR) # The years which the worker has to take retiement decision
+        assert (year >= T_ER) and (year <= T_LR) # The years in which the worker has to take retirement decision
         
         self.working_block = WorkYearBlock(num_input=year - AGE_0 + 3, num_hidden_node = num_hidden_node_w,  mode= 'early_retirement_year', alpha_pr=alpha_pr, layers_dict=layers_dict)
         self.retirement_block = retirement_block        
         self.year= year
-        
-      def forward(self, theta, edu, a_w_t, a_r_t, all_y, w_t, pr_bar_t, b_bar_t):
-        
-        h_t, x_ww, pr_t, x_rw = self.working_block(theta, edu, a_w_t, all_y) 
-        t = torch.ones_like(a_r_t).to(a_r_t.device) * self.year
-        x_rr = self.retirement_block(a_r_t, b_bar_t, t )
 
-        y_t = w_t * h_t 
+      # Forward Pass: Inputs at each year: theta (productivity), edu (education), a_w_t (asset conditioanl on being worker), a_r_t (asset conditioanl on being retierd),
+      # all_y_t (vector of income history), w_t (wage), pr_bar_t (probility of being retied before this year), b_bar_t (expected pension benefit if retied before this year)
+        
+      def forward(self, theta, edu, a_w_t, a_r_t, all_y_t, w_t, pr_bar_t, b_bar_t):
 
-        c_ww_t = x_ww * (y_t - income_tax(y_t) -social_security_tax(y_t) + a_w_t) + 1e-8
-        a_ww_tp = (1.0 - x_ww)*((y_t) - income_tax(y_t) - social_security_tax(y_t) + a_w_t)* (1+R) 
+        # Policy given policy functions
         
-        b_t = retirement_benefit(all_y, self.year - T_ER, 35)
-        
-        c_rw_t = (x_rw *(b_t + a_w_t))+ 1e-8
-        a_rw_tp = ((1.0-x_rw)*(b_t + a_w_t)*(1+R))
+        h_ww_t, x_ww_t, pr_t, x_rw_t = self.working_block(theta, edu, a_w_t, all_y) # Cond. on being a worker: hours of work, 1-asset'/rources if work, probability of retierment, 1-asset'/resource if retierd
+        t = torch.ones_like(a_r_t).to(a_r_t.device) * self.year # vector of age
+        x_rr_t = self.retirement_block(a_r_t,b_bar_t,t) # conditional on being a retieree: 1-asset'/resouce 
 
+        # Budget Constaint 
+        
+        # Decide to work conditional on start in worker state
+        #w_t = wage(mu(edu,year-Age_0),theta)
+        y_ww_t = w_t * h_ww_t # labor income
+        re_ww_t = y_ww_t - income_tax(y_ww_t) - social_security_tax(y_ww_t) + a_w_t*(1+R) 
+        c_ww_t = x_ww_t*re_ww_t + 1e-8
+        a_next_ww_t = (1.0 - x_ww_t)*(1+R)*re_ww_t
+        # Decice to retire conditional on start in worker state
+        b_t = retirement_benefit(all_y_t, self.year - T_ER, T_S)
+        re_rw_t = b_t + a_w_t
+        c_rw_t = x_rw_t*re_rw_t + 1e-8
+        a_next_rw_t = (1.0 - x_rw_t)*(1+R)*re_rw_t
+        # Start in retire state
+        re_rr_t = b_bar_t + a_r_t
+        c_rr_t = x_rr_t*re_rr_t + 1e-8
+        a_next_rr_t = (1.0-x_rr_t)*(1+R)*re_rr_t
+        
+        # Next Year state variables
 
-        a_rr_tp = ((1.0-x_rr)*(b_bar_t + a_r_t)*(1+R))
-        c_rr_t = (x_rr *(b_bar_t + a_r_t))+ 1e-8
+        # Asset next year, cond. being a worker then
+        a_next_w_t = a_next_ww_t
+        # Asset next year, cond. being a retire then
+        a_next_r_t = (1-pr_bar_t)*a_next_rw_t  +  pr_bar_t*a_next_rr_t
+        # Update starring the next year as a retire
+        pr_bar_next_t = pr_bar_t + (1-pr_bar_t)*pr_t[:,0]
+        # Update the expected Pension Benefit the next year cond. starting as a retire
+        b_bar_next_t = pr_bar_t*b_bar_t + (1-pr_bar_t)*b_t
+
+        # Expected vars for analysis
         
-        #the asset for next year, the a_w_tp is the same as a_ww_t so do not use a new varialbe for it
-        a_r_tp = (1-pr_bar_t) * ( a_rw_tp )  +  pr_bar_t*(a_rr_tp)
+        a_next_t = (1-pr_bar_next_t)*a_next_w_t + pr_bar_next_t*a_next_r_t
+        c_w_t = (1.0 - pr_t[:,0])*c_ww_t + pr_t[:,0]*c_rw_t
+        c_t = (1-pr_bar_t)*c_w_t + pr_bar_t*c_rr_t
+        h_w_t = (1.0 - pr_t[:,0])*h_ww_t
+        h_t = (1-pr_bar_t)*h_w_t    
+        y_w_t = (1.0 - pr_t[:,0])*y_ww_t
+        y_t = (1-pr_bar_t)*y_w_t      
         
-        
-        
-        #update pr_bar
-        pr_bar_tp  = pr_bar_t + (1-pr_bar_t) * pr_t[:,0]
-        
-        #calculate a_tp
-        a_tp = (1-pr_bar_tp) * a_ww_tp +  pr_bar_tp*(a_r_tp)
-        
-        #update b_bar
-        b_bar_tp = pr_bar_t * b_bar_t + (1-pr_bar_t) * b_t
-        
-        return {'a_w_tp':a_ww_tp,'a_r_tp': a_r_tp,'a_tp': a_tp,'c_ww_t': c_ww_t,'c_rw_t': c_rw_t,'c_rr_t': c_rr_t,          
-                'y_t': y_t,'h_t': h_t,'pr_t': pr_t[:,0],'pr_bar_tp': pr_bar_tp,'b_bar_tp': b_bar_tp}
+        return {'a_next_ww_t':a_next_ww_t,'a_next_rw_t': a_next_rw_t,'a_next_rr_t': a_next_rr_t,'a_next_t': a_next_t,
+                'c_ww_t': c_ww_t,'c_rw_t': c_rw_t,'c_rr_t': c_rr_t,          
+                'y_ww_t': y_ww_t,'y_w_t': y_w_t,'y_t': y_t,
+                'h_ww_t': h_ww_t,'h_w_t': h_w_t,'h_t': h_t,
+                'pr_t': pr_t[:,0],'pr_bar_next_t': pr_bar_next_t,'b_bar_next_t': b_bar_next_t}
          
         
 ## Full Model (All Blocks) --------------------
         
 
 class Model(nn.Module):
-  
-
 
   def __init__(self, T_LR= 70, T_ER= 62, T_D = 82,   num_hidden_node_w = 10, num_hidden_node_r = 5, alpha_pr = 1):
+    
     """
     Constructor for the Model class.
 
@@ -294,23 +311,19 @@ class Model(nn.Module):
         N_R (int): 
     """
 
-
-
     super().__init__()
+
+    # Defining DNN for all the years
     
     layers_dict = self.initializing_layer_dict(num_hidden_node_w)
+    
     retirement_block = RetirementYearBlock()
-    
     self.work_blocks = nn.ModuleDict({ f'year_{i}': WorkYearBlock(i - AGE_0+3, num_hidden_node = num_hidden_node_w, layers_dict=layers_dict) for i in range(AGE_0, T_ER) })
-    
     self.work_retirement_blocks = nn.ModuleDict({ f'year_{i}': EarlyRetiermentBlock(year=i, retirement_block = retirement_block, num_hidden_node_r=num_hidden_node_r, num_hidden_node_w= num_hidden_node_w, alpha_pr=alpha_pr , layers_dict = layers_dict) for i in range(T_ER, T_LR+1) })
-    #todo: for singel r block be aware you need to change hear too
     self.retirement_blocks = retirement_block 
-
-
-
-
-
+    
+  # Dictionary of type of layers used in all blocks
+  
   def initializing_layer_dict(self, num_hidden_node_w):
     layers_dict= {}
     layers_dict['general2'] = nn.Linear(num_hidden_node_w,num_hidden_node_w)
@@ -326,13 +339,13 @@ class Model(nn.Module):
     torch.nn.init.xavier_uniform_(layers_dict['task_ar'].weight)
     layers_dict['task_pr'] = nn.Linear(num_hidden_node_w,num_hidden_node_w, bias=True)
     torch.nn.init.xavier_uniform_(layers_dict['task_pr'].weight)
-    
     return layers_dict
-    
-    
 
-
+  # Forward Pass: simulation from the beginng to death
+  # Inputs: wage: theta (theta) and wage (all_w) vector, permanent types: edu (edu), initial states: asset (a_1)
+  
   def forward(self, theta, edu, a_1, all_w):
+    
     """
     Forward pass of the neural network model.
 
@@ -346,152 +359,99 @@ class Model(nn.Module):
             - a_t: Output tensor representing generated a_t values for each Year.
     """
 
-
-    # theta = theta.unsqueeze(dim=-1)
-    B = theta.shape[0]
-    device = theta.device
-
+    # Creating Output vars matrix
     
+    B = theta.shape[0] # Batch size
+    device = theta.device # GPU/CPU
+    # Size of each stage: Wokring, retirement decision, retire
     i_ER = T_ER -AGE_0 
     i_LR =  T_LR - AGE_0 
     i_D = T_D - AGE_0 +1
-    
-
+    # Vector of outputs
     all_a = torch.zeros(B,i_D+1 ).to(device)
     all_h = torch.zeros(B, i_D).to(device)
     all_y = torch.zeros(B, i_LR).to(device)
     all_c = torch.zeros(B, i_D).to(device)
-
-    
-    
-    
-    #using the block for the first year, predicting a_2 and h_1
-    h_t, x_t = self.work_blocks[f'year_22'](theta[:, 0], edu, a_1) 
-    y_t = all_w[:,0] * h_t
-    a_t = (1.0-x_t)*(y_t - income_tax(y_t)- social_security_tax(y_t)+ a_1)*(1+R)
-    c_t = (x_t)*(y_t - income_tax(y_t) - social_security_tax(y_t)+ a_1)+1e-8
-    
-    
-    
-    all_a[:,0] = a_1
-    all_h[:,0] = h_t
-    all_y[:,0] = y_t
-    all_c[:, 0] = c_t
-    all_a[:,1] = a_t
-    
-    
-    # loop over years until early retirement,
-    # In each year, previously generated values of 'a_t' and the corresponding theta will be fed to the model.
-    for i in range(1,i_ER):
-      
-
-      h_t, x_t = self.work_blocks[f'year_{i+AGE_0}'](theta[:, i], edu, a_t, all_y[:, :i])
-      
-      
-      y_t = all_w[:,i] * h_t
-      all_c[:, i] = (x_t)*(y_t - income_tax(y_t) -social_security_tax(y_t)+ a_t) +1e-8
-      a_t = (1.0 -x_t)*((y_t) - income_tax(y_t) -  social_security_tax(y_t) + a_t)* (1+R) 
-      all_y[:, i] = y_t
-      all_h[:, i] = h_t
-      all_a[:,i+1] = a_t
-    
-
-
-    
-    
-
-    
-    #the probability of becoming retired at year 61 (it is zero)
-    pr_bar= torch.zeros_like(a_t)
-    
-    
-    #benefit if retire at age 62
-    b_bar = torch.zeros_like(a_t)
-    
     all_pr_bar = torch.zeros(B, i_LR - i_ER+1).to(device)
     all_pr = torch.zeros(B, i_LR - i_ER+1).to(device)
+    # theta = theta.unsqueeze(dim=-1)
     
-    #index 0 for ww
-    #index 1 for rw
-    #index 2 for rr
+    # Year 1
+
+    h_t, x_t = self.work_blocks[f'year_22'](theta[:, 0], edu, a_1) 
+    y_t = all_w[:,0] * h_t
+    re_t = y_t - income_tax(y_t) - social_security_tax(y_t) + a_1
+    all_h[:,0] = h_t
+    all_y[:,0] = y_t
+    all_c[:, 0] = x_t*re_t + 1e-8
+    all_a[:,0] = a_1
+    all_a[:,1] = (1.0-x_t)*re_t*(1+R)
     all_c_ER = torch.zeros(B, i_LR - i_ER+1, 3).to(device)
+    
+    # Loop over years until early retirement
+    
+    for i in range(1,i_ER):
+    
+      h_t, x_t = self.work_blocks[f'year_{i+AGE_0}'](theta[:, i], edu, a_t, all_y[:, :i])
+      y_t = all_w[:,i] * h_t
+      re_t = y_t - income_tax(y_t) - social_security_tax(y_t) + a_t
+      all_y[:, i] = y_t
+      all_h[:, i] = h_t
+      all_c[:, i] = (x_t)*re_t + 1e-8
+      all_a[:,i+1] = (1.0 -x_t)*re_t*(1+R) 
 
+      # State vars for T_ER
     
-    a_w_t = a_r_t = a_t
-    
+      pr_bar = torch.zeros_like(a_t) # zero pr of starting reiterd at T_ER
+      b_bar = torch.zeros_like(a_t) # zero pension benefit if starting reiterd at T_ER
+      a_w_t = a_r_t = a_t # Starting asset given work/retire state
+
+    # Loop over years during work/retire decision period
+
+            return {'a_next_ww_t':a_next_ww_t,'a_next_rw_t': a_next_rw_t,'a_next_rr_t': a_next_rr_t,'a_next_t': a_next_t,
+                'c_ww_t': c_ww_t,'c_rw_t': c_rw_t,'c_rr_t': c_rr_t,          
+                'y_ww_t': y_ww_t,'y_w_t': y_w_t,'y_t': y_t,
+                'h_ww_t': h_ww_t,'h_w_t': h_w_t,'h_t': h_t,
+                'pr_t': pr_t[:,0],'pr_bar_next_t': pr_bar_next_t,'b_bar_next_t': b_bar_next_t}
+
     for i in range(i_ER, i_LR):
-      # t_t = torch.ones_like(a_t) * (i+AGE_0)
-      # benefit = retirement_benefit(all_y[:, :i], i - i_ER, 35)
-
-      # f forward(self, theta, edu, a_t, all_y, w_t, b_t, pr_bar_t, b_bar_t):
 
       outputs = self.work_retirement_blocks[f'year_{i+AGE_0}'](theta[:, i], edu, a_w_t,  a_r_t, all_y[:, :i,],all_w[:, i],  pr_bar, b_bar)
 
-      #if we are retired (pr = 1) the working hour should be consider 0 in utility calculation
       all_h[:, i] = outputs['h_t']
-      all_pr_bar[:, i - i_ER+1] = outputs['pr_bar_tp']
+      all_pr_bar[:, i - i_ER+1] = outputs['pr_bar_next_t']
       all_y[:, i] = outputs['y_t']
- 
-      all_a[:, i+1] = outputs['a_tp']
-      
-      all_c_ER[:, i-i_ER, 0] = outputs['c_ww_t']
-      all_c_ER[:, i-i_ER, 1] = outputs['c_rw_t']
-      all_c_ER[:, i-i_ER, 2] = outputs['c_rr_t']
-      
-  
-      
+      all_a[:, i+1] = outputs['a_next_t']
+      all_c_ER[:, i-i_ER, 0] = outputs['c_ww_t'] # index 0 for ww
+      all_c_ER[:, i-i_ER, 1] = outputs['c_rw_t'] # index 1 for rw
+      all_c_ER[:, i-i_ER, 2] = outputs['c_rr_t'] # index 2 for rr
       pr_bar = outputs['pr_bar_tp']
       b_bar = outputs['b_bar_tp']
       a_w_t = outputs['a_w_tp']
       a_r_t = outputs['a_r_tp']
-      
       all_pr[:,i-i_ER] =  outputs['pr_t']
       
-      
+    # The Latest retiement year
     
-    
-    
-    
-    
-    
-    #year 70
     outputs = self.work_retirement_blocks[f'year_{i_LR+AGE_0}'](theta[:, i_LR-1], edu, a_w_t,  a_r_t, all_y[:, :i_LR,],all_w[:, i_LR-1],  pr_bar, b_bar)
     
     all_a[:, i_LR+1] = outputs['a_tp']
-    
-    
     all_c_ER[:, i_LR-i_ER, 0] = 1e-8
     all_c_ER[:, i_LR-i_ER, 1] = outputs['c_rw_t']
     all_c_ER[:, i_LR-i_ER, 2] = outputs['c_rr_t']
-    
     a_r_t = outputs['a_r_tp']
     b_bar = outputs['b_bar_tp']
     all_pr[:,i_LR-i_ER] =  1
-    
-  
-  
-    
 
-
+    # The retiremnt years
 
     for i in range(i_LR+1, i_D):
       
-    
       t = torch.ones_like(a_r_t).to(a_r_t.device) * (i+AGE_0)
       x_t = self.retirement_blocks(a_r_t, b_bar, t)
       c_t = (x_t *(b_bar + a_r_t)) + 1e-8
-  
-      
       a_r_t =  ((1.0-x_t)*(b_bar + a_r_t)*(1+R))
       all_a[:,i+1] = a_r_t
       all_c[:,i] = c_t
-
   
     return  all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y
-     
-      
-      
-      
-    
-
-    
