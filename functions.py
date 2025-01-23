@@ -7,13 +7,11 @@ from Parameters import *
 
 # Deterministic part
 mu = lambda edu, t: BETA_w_0 + BETA_w_1 * (t+AGE_0) +  BETA_w_2 * (t+AGE_0)**2 + BETA_w_3 * edu + BETA_w_4 * edu * (t+AGE_0) + BETA_w_5 * edu * (t+AGE_0)**2
-
 # Stochastic part 
 e = lambda n: torch.normal(0, SIGMA_e, n) # Shcoks to persistant part
-theta = lambda theta_p , e: theta_p + e   # Update the persisaint part (Markov d1)
-
-# Wage
-wage = lambda u_t, theta_t : torch.maximum(torch.e**(u_t + theta_t) , torch.tensor(w_min))
+theta = lambda theta_pre,e: theta_pre + e   # Update the persistant part (Markov d1)
+# Wage (stochstic part+determisnitic part),accouting for min wage
+wage = lambda mu_t, theta_t : torch.maximum(torch.e**(mu_t + theta_t) , torch.tensor(w_min))
 
 ## Budget Constaint
 
