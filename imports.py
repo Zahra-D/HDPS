@@ -1,5 +1,4 @@
-## Importing required libraries
-
+### Importing required libraries
 
 import numpy as np
 import torch
@@ -10,14 +9,11 @@ from torch.nn.utils import clip_grad_norm_
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
 
-import seaborn as sns #visualisation
-import matplotlib.pyplot as plt #visualisation
+import seaborn as sns # visualisation
+import matplotlib.pyplot as plt
 
 import random
-
 from sympy import Piecewise, symbols
-
-# %%
 
 import pickle
 from tqdm import tqdm
