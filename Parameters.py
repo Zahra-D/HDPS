@@ -42,7 +42,7 @@ PHI = 0.0006 # Coefficent of disutility of labor supply
 
 ## Budget Constaint -------------------- 
 
-consumption_min = 2000 # Minimum acceptable consumption level
+cons_min = 2000 # Minimum acceptable consumption level
 R = 0.042 # risk-free interset rate
 
 ## Grids --------------------
