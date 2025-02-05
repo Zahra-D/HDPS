@@ -33,8 +33,3 @@ def retirement_benefit(all_y, t_R, TS=35):
     S = Score(all_y, TS)
     b = pension_benefit(S) * delta
     return b
-
-# ?
-# u_t(EDU, t): calculate u_t for the inputs EDU and t, if t=[1,2,3,...] => u_t=[u_1, u_2, u_3, ...]
-
-    
