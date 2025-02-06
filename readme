@@ -1,1 +1,31 @@
-readme
+
+1. Paraemters: Parameters initialization
+
+Defining paremters of 
+- Life Cycle, 
+- Initial Distribution, Wage Function, Preference, Budget Constaint,
+- Grids, Simulation
+- Tax Function , Social Security Function 
+
+--------------------------------------------------------------------------------
+
+2. Functions: Defining functions used in the model
+
+- Wage Function
+- Budget Constaint (consumtpion) 
+- Public Policies (income tax, socail security)
+
+--------------------------------------------------------------------------------
+
+3. Model: Defninng the DNN model
+
+- Working Ages Block
+- Retierement Block
+- Early Retierment Block
+- Full Model
+
+
+
+--------------------------------------------------------------------------------
+
+4. utils: 
