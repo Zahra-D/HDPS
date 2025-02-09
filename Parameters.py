@@ -47,7 +47,11 @@ R = 0.042 # risk-free interset rate
 
 ## Grids --------------------
 
-h_grid = torch.tensor([0.0,1300.0,2080.0,2860.0]) # Grids of work hours
+h_max = 2860.0 # Over time work, max possible hours of work
+H_FT = 2080.0 # Full time work
+H_PT = 1300.0 # Part time work
+
+h_grid = torch.tensor([0.0,H_PT,H_FT,h_max]) # Grids of work hours
 
 ## Tax Function --------------------
 
