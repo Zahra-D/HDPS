@@ -162,11 +162,20 @@ def utility_retirement_pr(c_t, c_t_ER, pr_bar, pr_t, h_t, epoch, s_writer, args,
   return  total_utility
 
 def utility(c_t, h_t,BETA_t, args):
+  
+  # Utility of consumtpion
   consumption_utility =  (c_t**(1-GAMMA))/(1-GAMMA)
-  work_hour_disutility = ((h_t/H[-1]) ** (1+1/ETA))/(1+1/ETA)
+  # Distility of Houes of work
+    # M. Discrete Hours
+  #work_hour_disutility = ((h_t/H[-1]) ** (1+1/ETA))/(1+1/ETA) 
+    # M. Continous Hours
+  work_hour_disutility = h_t ** (1+1/ETA))/(1+1/ETA) 
+  # Disutility of Going to work
   working_disutility =  (h_t > 0).int()
+  # Sum
   utility = (BETA_t * (consumption_utility - args.phi * working_disutility - args.psi * work_hour_disutility))
-  return utility
+  
+return utility
 
 
  ## Loss Function --------------------
