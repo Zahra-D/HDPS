@@ -61,7 +61,7 @@ TAU_Inc_Tax = 0.1029 # Income tax progressivity
 ## Social Security Function --------------------
 
 TAU_SS_Tax = 0.106 # Social security tax
-W_b_SS = torch.tensor(76200) # Wage Base
+Inc_base_SS = torch.tensor(76200) # Wage Base
 BEND_POINTS_b_SS = torch.tensor([0.9,0.32,0.15]) # Sopes of pension benefit function
 BEND_POINTS_a_SS = torch.tensor([6372,38422,76200]) # Bend points of pension benefit function 
 DELTA_t_SS = torch.tensor([0.7, 0.75, 0.8, 0.866, 0.933, 1.00, 1.08, 1.16, 1.24]) # Age of retienetn coefficint of pension  benefit
