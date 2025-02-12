@@ -69,7 +69,7 @@ class TaskBlock(nn.Module):
   
   # Also define Early retienemt ages as mode of this block, later define its foraward using this.
     
-  class WorkYearBlock(nn.Module):
+class WorkYearBlock(nn.Module):
 
   def __init__(self, num_input=1, num_hidden_node = 10, mode = 'working_year', alpha_pr= 1, layers_dict=None):
     super().__init__()
@@ -97,8 +97,9 @@ class TaskBlock(nn.Module):
 
     self.activation_function = nn.GELU()
     self.a_activation = nn.Sigmoid() # For Asseet (0 < a/Total resource  < 1)
+    self.h_activation = nn.Sigmoid() # For Continiuos hours of work (0 < h  < 1)
     self.gumbel = F.gumbel_softmax # For retiermnet (Discrte choice)
-    self.h = h_grid # For h grid
+    #self.h = h_grid # For h grid
 
     # Mode: eaither working_years or early_retirement_years (based on input) 
     
@@ -113,13 +114,14 @@ class TaskBlock(nn.Module):
     # Task a_w: Task Layer Asset, conditional on working: task_a_w
     self.task_a_w = TaskBlock(num_hidden_node=num_hidden_node, num_output=1, activation_funcion=self.activation_function, task_layer=task_layer_a_w)
     # Task h: Hours of work (categorical with 4 categories and for the final result we will get mean of all the four output)
-    self.task_h = TaskBlock(num_hidden_node=num_hidden_node, num_output=4, activation_funcion=self.activation_function,task_layer=task_layer_h )
+    # self.task_h = TaskBlock(num_hidden_node=num_hidden_node, num_output=4, activation_funcion=self.activation_function,task_layer=task_layer_h)
+    self.task_h = TaskBlock(num_hidden_node=num_hidden_node, num_output=1, activation_funcion=self.activation_function,task_layer=task_layer_h)
     # Extra Task Layer for Early retierment Years
     if mode == 'early_retirement_year':
           # Task a_w: Task Layer Asset, conditional on becoming retierd
           self.task_a_r = TaskBlock(num_hidden_node=num_hidden_node, num_output=1, activation_funcion=self.activation_function, task_layer=task_layer_a_r)
           # Task pr: probailibity of beconimg retierd
-          self.alpha_pr = alpha_pr # Paramter of f(pr)
+          #self.alpha_pr = alpha_pr # Paramter of f(pr)
           self.task_pr = TaskBlock(num_hidden_node=num_hidden_node, num_output=2,  activation_funcion=self.activation_function, task_layer=task_layer_pr)
 
   # Forward Pass: x -> General Layers of 1 & 2 -> x_x_w,x_h(,x_x_r,pr)
@@ -158,15 +160,18 @@ class TaskBlock(nn.Module):
     x = self.activation_function(x)
     x = self.general_layer_2(x)
     x = self.activation_function(x)
-    # Task Layer: 1-a_w'/resource) if work cond. on being in worker state
+    # Task Layer: 1-a_w'/resource if work cond. on being in worker state
     x_w_w = self.task_a_w(x)
     x_w_w = self.a_activation(x_w_w)
     # Task Layer: h
     x_h = self.task_h(x)
-    x_h = F.softmax(x_h, dim=-1)
-    self.h = self.h.to(device)
+      # Method. Continous h
+    x_h = self.h_activation(x_h)
+      # Method. Discrte h
+    #x_h = F.softmax(x_h, dim=-1)
+    #self.h = self.h.to(device)
       # Method. Use weighted mean as approximation
-    x_h = torch.einsum('bh,h->b',x_h, self.h) 
+    #x_h = torch.einsum('bh,h->b',x_h, self.h) 
       # Method. Use Max pf probabilities
     # one_hot[torch.arange(B).to(device), torch.argmax(x_h, dim = 1)] = self.h[torch.argmax(x_h, dim = 1)] 
     # x_h = x_h * self.h
@@ -179,9 +184,9 @@ class TaskBlock(nn.Module):
       x_pr = self.gumbel(self.task_pr(x), hard=True)
         # Method. Temperute Parameter?
       # pr = self.a_activation(self.alpha_pr * self.task_pr(x)) 
-      return x_h, x_w_w.squeeze(), x_pr, x_r_w.squeeze()
+      return x_h.squeeze(), x_w_w.squeeze(), x_pr, x_r_w.squeeze()
       
-    return x_h, x_w_w.squeeze()
+    return x_h.squeeze(), x_w_w.squeeze()
   
 
 ## Retierment Ages Block --------------------
@@ -254,12 +259,16 @@ class EarlyRetiermentBlock(nn.Module):
         
         # Decide to work conditional on start in worker state
         #w_t = wage(mu(edu,year-Age_0),theta)
-        y_ww_t = w_t * h_ww_t # labor income
-        re_ww_t = y_ww_t - income_tax(y_ww_t) - social_security_tax(y_ww_t) + a_w_t*(1+R) 
+        # labor income
+          # Method. Continous h
+        y_ww_t = w_t * (h_ww_t*h_max)
+          # Method. Discrte h
+        #y_ww_t = w_t * h_ww_t
+        re_ww_t = y_ww_t - income_tax(y_ww_t) - social_security_tax(y_ww_t) + a_w_t
         c_ww_t = x_ww_t*re_ww_t + 1e-8
         a_next_ww_t = (1.0 - x_ww_t)*(1+R)*re_ww_t
         # Decice to retire conditional on start in worker state
-        b_t = retirement_benefit(all_y_t, self.year - T_ER, T_S)
+        b_t = retirement_benefit(all_y_t, self.year - T_ER, Len_S_Max_SS)
         re_rw_t = b_t + a_w_t
         c_rw_t = x_rw_t*re_rw_t + 1e-8
         a_next_rw_t = (1.0 - x_rw_t)*(1+R)*re_rw_t
@@ -344,7 +353,7 @@ class Model(nn.Module):
   # Forward Pass: simulation from the beginng to death
   # Inputs: wage: theta (theta) and wage (all_w) vector, permanent types: edu (edu), initial states: asset (a_1)
   
-  def forward(self, theta, edu, a_1, all_w):
+  def forward(self, theta, edu, A_0, all_w):
     
     """
     Forward pass of the neural network model.
@@ -378,69 +387,77 @@ class Model(nn.Module):
     
     # Year 1
 
-    h_t, x_t = self.work_blocks[f'year_22'](theta[:, 0], edu, a_1) 
-    y_t = all_w[:,0] * h_t
-    re_t = y_t - income_tax(y_t) - social_security_tax(y_t) + a_1
+    h_t, x_t = self.work_blocks[f'year_22'](theta[:, 0], edu, A_0) 
+    # labor income
+        # Method. Continous h
+    y_t = all_w[:,0] * (h_t*h_max)
+          # Method. Discrte h
+    #y_t = all_w[:,0] * h_t
+    re_t = y_t - income_tax(y_t) - social_security_tax(y_t) + A_0 
+    c_t = x_t*re_t + 1e-8
+    a_next_t = (1.0 - x_t)*(1+R)*re_t
+    
     all_h[:,0] = h_t
     all_y[:,0] = y_t
-    all_c[:, 0] = x_t*re_t + 1e-8
-    all_a[:,0] = a_1
-    all_a[:,1] = (1.0-x_t)*re_t*(1+R)
+    all_c[:,0] = c_t
+    all_a[:,0] = A_0
+    all_a[:,1] = a_next_t
     all_c_ER = torch.zeros(B, i_LR - i_ER+1, 3).to(device)
     
     # Loop over years until early retirement
     
     for i in range(1,i_ER):
     
-      h_t, x_t = self.work_blocks[f'year_{i+AGE_0}'](theta[:, i], edu, a_t, all_y[:, :i])
-      y_t = all_w[:,i] * h_t
+      h_t, x_t = self.work_blocks[f'year_{i+AGE_0}'](theta[:, i], edu, all_a[:,i], all_y[:, :i])
+          # Method. Continous h
+      y_t = all_w[:,i] * (h_t*h_max)
+          # Method. Discrte h
+      #y_t = all_w[:,i] * h_t
       re_t = y_t - income_tax(y_t) - social_security_tax(y_t) + a_t
+      c_t = x_t*re_t + 1e-8
+      a_next_t = (1.0 - x_t)*(1+R)*re_t
+      
       all_y[:, i] = y_t
       all_h[:, i] = h_t
-      all_c[:, i] = (x_t)*re_t + 1e-8
-      all_a[:,i+1] = (1.0 -x_t)*re_t*(1+R) 
+      all_c[:, i] = c_t
+      all_a[:,i+1] = a_next_t 
 
-      # State vars for T_ER
+    # State vars for T_ER
     
-      pr_bar = torch.zeros_like(a_t) # zero pr of starting reiterd at T_ER
-      b_bar = torch.zeros_like(a_t) # zero pension benefit if starting reiterd at T_ER
-      a_w_t = a_r_t = a_t # Starting asset given work/retire state
-
-    # Loop over years during work/retire decision period
-
-            return {'a_next_ww_t':a_next_ww_t,'a_next_rw_t': a_next_rw_t,'a_next_rr_t': a_next_rr_t,'a_next_t': a_next_t,
-                'c_ww_t': c_ww_t,'c_rw_t': c_rw_t,'c_rr_t': c_rr_t,          
-                'y_ww_t': y_ww_t,'y_w_t': y_w_t,'y_t': y_t,
-                'h_ww_t': h_ww_t,'h_w_t': h_w_t,'h_t': h_t,
-                'pr_t': pr_t[:,0],'pr_bar_next_t': pr_bar_next_t,'b_bar_next_t': b_bar_next_t}
+    pr_bar_t = torch.zeros_like(a_t) # zero pr of starting reiterd at T_ER
+    b_bar_t = torch.zeros_like(a_t) # zero pension benefit if starting reiterd at T_ER
+    a_w_t = a_r_t = a_next_t # Starting asset given work/retire state
+    
+    all_c_ER = torch.zeros(B, i_LR - i_ER+1, 3).to(device)
+    all_pr = torch.zeros(B, i_LR - i_ER+1).to(device)
 
     for i in range(i_ER, i_LR):
 
-      outputs = self.work_retirement_blocks[f'year_{i+AGE_0}'](theta[:, i], edu, a_w_t,  a_r_t, all_y[:, :i,],all_w[:, i],  pr_bar, b_bar)
+      outputs = self.work_retirement_blocks[f'year_{i+AGE_0}'](theta[:,i],edu,a_w_t,a_r_t,all_y[:,:i,],all_w[:,i],pr_bar_t,b_bar_t)
 
       all_h[:, i] = outputs['h_t']
       all_pr_bar[:, i - i_ER+1] = outputs['pr_bar_next_t']
-      all_y[:, i] = outputs['y_t']
       all_a[:, i+1] = outputs['a_next_t']
       all_c_ER[:, i-i_ER, 0] = outputs['c_ww_t'] # index 0 for ww
       all_c_ER[:, i-i_ER, 1] = outputs['c_rw_t'] # index 1 for rw
       all_c_ER[:, i-i_ER, 2] = outputs['c_rr_t'] # index 2 for rr
-      pr_bar = outputs['pr_bar_tp']
-      b_bar = outputs['b_bar_tp']
-      a_w_t = outputs['a_w_tp']
-      a_r_t = outputs['a_r_tp']
       all_pr[:,i-i_ER] =  outputs['pr_t']
+
+      all_y[:,i] = outputs['y_ww_t']
+      pr_bar_t = outputs['pr_bar_next_t']
+      b_bar_t = outputs['b_bar_next_t']
+      a_w_t = outputs['a_next_w_t']
+      a_r_t = outputs['a_next_r_t']
       
     # The Latest retiement year
     
-    outputs = self.work_retirement_blocks[f'year_{i_LR+AGE_0}'](theta[:, i_LR-1], edu, a_w_t,  a_r_t, all_y[:, :i_LR,],all_w[:, i_LR-1],  pr_bar, b_bar)
+    outputs = self.work_retirement_blocks[f'year_{i_LR+AGE_0}'](theta[:, i_LR-1],edu,a_w_t,a_r_t,all_y[:,:i_LR,],all_w[:, i_LR-1],pr_bar_t, b_bar_t)
     
-    all_a[:, i_LR+1] = outputs['a_tp']
+    all_a[:, i_LR+1] = outputs['a_next_r_t']
     all_c_ER[:, i_LR-i_ER, 0] = 1e-8
     all_c_ER[:, i_LR-i_ER, 1] = outputs['c_rw_t']
     all_c_ER[:, i_LR-i_ER, 2] = outputs['c_rr_t']
-    a_r_t = outputs['a_r_tp']
-    b_bar = outputs['b_bar_tp']
+    b_bar = outputs['b_bar_next_t']
     all_pr[:,i_LR-i_ER] =  1
 
     # The retiremnt years
@@ -448,10 +465,11 @@ class Model(nn.Module):
     for i in range(i_LR+1, i_D):
       
       t = torch.ones_like(a_r_t).to(a_r_t.device) * (i+AGE_0)
-      x_t = self.retirement_blocks(a_r_t, b_bar, t)
-      c_t = (x_t *(b_bar + a_r_t)) + 1e-8
-      a_r_t =  ((1.0-x_t)*(b_bar + a_r_t)*(1+R))
-      all_a[:,i+1] = a_r_t
+      x_t = self.retirement_blocks(all_a[:,i],b_bar,t)
+      re_t = b_bar + a_r_t
+      c_t = x_t*re_t + 1e-8
+      a_next_t = (1.0 - x_t)*(1+R)*re_t
+      all_a[:,i+1] = a_next_t
       all_c[:,i] = c_t
   
     return  all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y
