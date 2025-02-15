@@ -23,13 +23,13 @@ def train_step(model, dataloader, epoch, s_writer, optimizer, device, args):
         theta_t_, w_t_, edu_ = batch # Extract batch features
         w_t_ = w_t_.to(device)
         len_batch = len(batch[0]) # Determine batch size
-        a_1 = torch.tensor([A_1]* len_batch, dtype=torch.float32) # Initial asset for all batch
+        a_0 = torch.tensor([A_0]* len_batch, dtype=torch.float32) # Initial asset for all batch
 
         # Reset gradients
         optimizer.zero_grad()  # Clears previous gradients from the optimizer
 
         # Forward Pass
-        all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y = model(theta_t_.to(device), edu_.to(device), a_1.to(device),w_t_)
+        all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y = model(theta_t_.to(device), edu_.to(device), a_0.to(device),w_t_)
 
         # Computing the Loss
         loss = loss_function_retirement_pr_cross(model, all_c, all_c_ER, all_pr_bar, all_pr, all_h, epoch, s_writer, args)
@@ -72,10 +72,10 @@ def do_eval_save(model, dataloader, base_dir, epoch, device, s_writer,args):
             theta_t, w_t, edu = batch
             w_t = w_t.to(device)
             len_batch = len(batch[0])
-            a_1 = torch.tensor([A_1]* len_batch)
+            a_0 = torch.tensor([A_0]* len_batch)
 
             # Running Model Inference
-            retirement_p, working_c, retirement_c, working_a, retirement_a, working_h, retirement_h, all_y_, all_r  = model(theta_t.to(device), edu.to(device), a_1.to(device), w_t)
+            retirement_p, working_c, retirement_c, working_a, retirement_a, working_h, retirement_h, all_y_, all_r  = model(theta_t.to(device), edu.to(device), a_0.to(device), w_t)
 
             # Combining Working and Retirement States
             L = retirement_c.shape[1]
