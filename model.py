@@ -299,7 +299,7 @@ class EarlyRetiermentBlock(nn.Module):
         y_t = (1-pr_bar_t)*y_w_t      
         
         return {'a_next_ww_t':a_next_ww_t,'a_next_rw_t': a_next_rw_t,'a_next_rr_t': a_next_rr_t,'a_next_t': a_next_t,
-                'c_ww_t': c_ww_t,'c_rw_t': c_rw_t,'c_rr_t': c_rr_t,          
+                'c_ww_t': c_ww_t,'c_rw_t': c_rw_t,'c_rr_t': c_rr_t,'c_t': c_t,          
                 'y_ww_t': y_ww_t,'y_w_t': y_w_t,'y_t': y_t,
                 'h_ww_t': h_ww_t,'h_w_t': h_w_t,'h_t': h_t,
                 'pr_t': pr_t[:,0],'pr_bar_next_t': pr_bar_next_t,'b_bar_next_t': b_bar_next_t}
@@ -381,8 +381,6 @@ class Model(nn.Module):
     all_h = torch.zeros(B, i_D).to(device)
     all_y = torch.zeros(B, i_LR).to(device)
     all_c = torch.zeros(B, i_D).to(device)
-    all_pr_bar = torch.zeros(B, i_LR - i_ER+1).to(device)
-    all_pr = torch.zeros(B, i_LR - i_ER+1).to(device)
     # theta = theta.unsqueeze(dim=-1)
     
     # Year 1
@@ -430,6 +428,7 @@ class Model(nn.Module):
     
     all_c_ER = torch.zeros(B, i_LR - i_ER+1, 3).to(device)
     all_pr = torch.zeros(B, i_LR - i_ER+1).to(device)
+    all_pr_bar = torch.zeros(B, i_LR - i_ER+1).to(device)
 
     for i in range(i_ER, i_LR):
 
@@ -438,11 +437,13 @@ class Model(nn.Module):
       all_h[:, i] = outputs['h_t']
       all_pr_bar[:, i - i_ER+1] = outputs['pr_bar_next_t']
       all_a[:, i+1] = outputs['a_next_t']
+      all_c[:, i] = outputs['c_t'] 
       all_c_ER[:, i-i_ER, 0] = outputs['c_ww_t'] # index 0 for ww
       all_c_ER[:, i-i_ER, 1] = outputs['c_rw_t'] # index 1 for rw
       all_c_ER[:, i-i_ER, 2] = outputs['c_rr_t'] # index 2 for rr
       all_pr[:,i-i_ER] =  outputs['pr_t']
-
+      all_pr_bar[:,i-i_ER+1] =  outputs['pr_bar_next_t']
+      
       all_y[:,i] = outputs['y_ww_t']
       pr_bar_t = outputs['pr_bar_next_t']
       b_bar_t = outputs['b_bar_next_t']
@@ -452,13 +453,16 @@ class Model(nn.Module):
     # The Latest retiement year
     
     outputs = self.work_retirement_blocks[f'year_{i_LR+AGE_0}'](theta[:, i_LR-1],edu,a_w_t,a_r_t,all_y[:,:i_LR,],all_w[:, i_LR-1],pr_bar_t, b_bar_t)
-    
+
+    all_h[:, i_LR] = 0.00
+    all_y[:, i_LR] = 0.00
     all_a[:, i_LR+1] = outputs['a_next_r_t']
-    all_c_ER[:, i_LR-i_ER, 0] = 1e-8
-    all_c_ER[:, i_LR-i_ER, 1] = outputs['c_rw_t']
-    all_c_ER[:, i_LR-i_ER, 2] = outputs['c_rr_t']
+    all_c[:, i_LR] = (1-pr_bar_t)*outputs['c_rw_t'] + pr_bar_t*outputs['c_rr_t']
+    all_c_ER[:, i_LR-i_ER+1, 0] = 1e-8
+    all_c_ ER[:, i_LR-i_ER+1, 1] = outputs['c_rw_t']
+    all_c_ER[:, i_LR-i_ER+1, 2] = outputs['c_rr_t']
     b_bar = outputs['b_bar_next_t']
-    all_pr[:,i_LR-i_ER] =  1
+    all_pr[:,i_LR-i_ER+1] =  1
 
     # The retiremnt years
 
@@ -471,5 +475,6 @@ class Model(nn.Module):
       a_next_t = (1.0 - x_t)*(1+R)*re_t
       all_a[:,i+1] = a_next_t
       all_c[:,i] = c_t
+      all_h[:, i] = 0.00
   
     return  all_a, all_c, all_c_ER, all_pr_bar, all_pr, all_h, all_y
