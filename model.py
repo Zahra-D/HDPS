@@ -411,7 +411,7 @@ class Model(nn.Module):
       y_t = all_w[:,i] * (h_t*h_max)
           # Method. Discrte h
       #y_t = all_w[:,i] * h_t
-      re_t = y_t - income_tax(y_t) - social_security_tax(y_t) + a_t
+      re_t = y_t - income_tax(y_t) - social_security_tax(y_t) + all_a[:,i]
       c_t = x_t*re_t + 1e-8
       a_next_t = (1.0 - x_t)*(1+R)*re_t
       
