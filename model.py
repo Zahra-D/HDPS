@@ -422,8 +422,8 @@ class Model(nn.Module):
 
     # State vars for T_ER
     
-    pr_bar_t = torch.zeros_like(a_t) # zero pr of starting reiterd at T_ER
-    b_bar_t = torch.zeros_like(a_t) # zero pension benefit if starting reiterd at T_ER
+    pr_bar_t = torch.zeros_like(a_next_t) # zero pr of starting reiterd at T_ER
+    b_bar_t = torch.zeros_like(a_next_t) # zero pension benefit if starting reiterd at T_ER
     a_w_t = a_r_t = a_next_t # Starting asset given work/retire state
     
     all_c_ER = torch.zeros(B, i_LR - i_ER+1, 3).to(device)
