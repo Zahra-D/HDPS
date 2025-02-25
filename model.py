@@ -251,7 +251,7 @@ class EarlyRetiermentBlock(nn.Module):
 
         # Policy given policy functions
         
-        h_ww_t, x_ww_t, pr_t, x_rw_t = self.working_block(theta, edu, a_w_t, all_y) # Cond. on being a worker: hours of work, 1-asset'/rources if work, probability of retierment, 1-asset'/resource if retierd
+        h_ww_t, x_ww_t, pr_t, x_rw_t = self.working_block(theta, edu, a_w_t, all_y_t) # Cond. on being a worker: hours of work, 1-asset'/rources if work, probability of retierment, 1-asset'/resource if retierd
         t = torch.ones_like(a_r_t).to(a_r_t.device) * self.year # vector of age
         x_rr_t = self.retirement_block(a_r_t,b_bar_t,t) # conditional on being a retieree: 1-asset'/resouce 
 
