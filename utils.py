@@ -169,7 +169,7 @@ def utility(c_t, h_t,BETA_t, args):
     # M. Discrete Hours
   #work_hour_disutility = ((h_t/H[-1]) ** (1+1/ETA))/(1+1/ETA) 
     # M. Continous Hours
-  work_hour_disutility = h_t ** (1+1/ETA))/(1+1/ETA) 
+  work_hour_disutility = (h_t ** (1+1/ETA))/(1+1/ETA) 
   # Disutility of Going to work
   working_disutility =  (h_t > 0).int()
   # Sum
