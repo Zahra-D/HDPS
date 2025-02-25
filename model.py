@@ -459,7 +459,7 @@ class Model(nn.Module):
     all_a[:, i_LR+1] = outputs['a_next_r_t']
     all_c[:, i_LR] = (1-pr_bar_t)*outputs['c_rw_t'] + pr_bar_t*outputs['c_rr_t']
     all_c_ER[:, i_LR-i_ER+1, 0] = 1e-8
-    all_c_ ER[:, i_LR-i_ER+1, 1] = outputs['c_rw_t']
+    all_c_ER[:, i_LR-i_ER+1, 1] = outputs['c_rw_t']
     all_c_ER[:, i_LR-i_ER+1, 2] = outputs['c_rr_t']
     b_bar = outputs['b_bar_next_t']
     all_pr[:,i_LR-i_ER+1] =  1
