@@ -37,8 +37,8 @@ pension_benefit = lambda S: ((BEND_POINTS_b_SS[0] * S * (S <= BEND_POINTS_a_SS[0
                              (BEND_POINTS_b_SS[0] * BEND_POINTS_a_SS[0] + BEND_POINTS_b_SS[1] * (BEND_POINTS_a_SS[1] - BEND_POINTS_a_SS[0]) + BEND_POINTS_b_SS[2] * (Inc_base_SS - BEND_POINTS_a_SS[1])) * (S > BEND_POINTS_a_SS[2]))
 
 def retirement_benefit(all_y, t_R, TS=35):
-    delta_t = DELTA_t.to(all_y.device)
-    delta = DELTA_t_SS[t_R]
+    delta_t = DELTA_t_SS.to(all_y.device)
+    delta = delta_t[t_R]
     S = Score(all_y, TS)
     b = pension_benefit(S) * delta
     return b
