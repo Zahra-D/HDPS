@@ -175,7 +175,7 @@ def utility(c_t, h_t,BETA_t, args):
   # Sum
   utility = (BETA_t * (consumption_utility - args.phi * working_disutility - args.psi * work_hour_disutility))
   
-return utility
+  return utility
 
 
  ## Loss Function --------------------
