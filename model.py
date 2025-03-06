@@ -298,7 +298,8 @@ class EarlyRetiermentBlock(nn.Module):
         y_w_t = (1.0 - pr_t[:,0])*y_ww_t
         y_t = (1-pr_bar_t)*y_w_t      
         
-        return {'a_next_ww_t':a_next_ww_t,'a_next_rw_t': a_next_rw_t,'a_next_rr_t': a_next_rr_t,'a_next_t': a_next_t,
+        return {'a_next_ww_t':a_next_ww_t,'a_next_rw_t': a_next_rw_t,'a_next_rr_t': a_next_rr_t,
+                'a_next_t': a_next_t,'a_next_w_t': a_next_w_t,'a_next_r_t': a_next_r_t,
                 'c_ww_t': c_ww_t,'c_rw_t': c_rw_t,'c_rr_t': c_rr_t,'c_t': c_t,          
                 'y_ww_t': y_ww_t,'y_w_t': y_w_t,'y_t': y_t,
                 'h_ww_t': h_ww_t,'h_w_t': h_w_t,'h_t': h_t,
@@ -373,14 +374,16 @@ class Model(nn.Module):
     B = theta.shape[0] # Batch size
     device = theta.device # GPU/CPU
     # Size of each stage: Wokring, retirement decision, retire
-    i_ER = T_ER -AGE_0 
-    i_LR =  T_LR - AGE_0 
-    i_D = T_D - AGE_0 +1
+    i_ER = T_ER - AGE_0 
+    i_LR = T_LR - AGE_0 
+    i_D  = T_D  - AGE_0
     # Vector of outputs
-    all_a = torch.zeros(B,i_D+1 ).to(device)
-    all_h = torch.zeros(B, i_D).to(device)
-    all_y = torch.zeros(B, i_LR).to(device)
-    all_c = torch.zeros(B, i_D).to(device)
+    all_a = torch.zeros(B,i_D+1).to(device)
+    all_h = torch.zeros(B,i_D).to(device)
+    all_y = torch.zeros(B,i_LR).to(device)
+    all_c = torch.zeros(B,i_D).to(device)
+    all_c_ER = torch.zeros(B, i_LR - i_ER+1, 3).to(device)
+    
     # theta = theta.unsqueeze(dim=-1)
     
     # Year 1
@@ -400,13 +403,12 @@ class Model(nn.Module):
     all_c[:,0] = c_t
     all_a[:,0] = A_0
     all_a[:,1] = a_next_t
-    all_c_ER = torch.zeros(B, i_LR - i_ER+1, 3).to(device)
     
     # Loop over years until early retirement
     
-    for i in range(1,i_ER):
+    for i in range(1,i_ER-1):
     
-      h_t, x_t = self.work_blocks[f'year_{i+AGE_0}'](theta[:, i], edu, all_a[:,i], all_y[:, :i])
+      h_t, x_t = self.work_blocks[f'year_{i+AGE_0}'](theta[:, i], edu, all_a[:,i], all_y[:, :i-1])
           # Method. Continous h
       y_t = all_w[:,i] * (h_t*h_max)
           # Method. Discrte h
@@ -426,13 +428,12 @@ class Model(nn.Module):
     b_bar_t = torch.zeros_like(a_next_t) # zero pension benefit if starting reiterd at T_ER
     a_w_t = a_r_t = a_next_t # Starting asset given work/retire state
     
-    all_c_ER = torch.zeros(B, i_LR - i_ER+1, 3).to(device)
     all_pr = torch.zeros(B, i_LR - i_ER+1).to(device)
     all_pr_bar = torch.zeros(B, i_LR - i_ER+1).to(device)
 
-    for i in range(i_ER, i_LR):
+    for i in range(i_ER, i_LR-1):
 
-      outputs = self.work_retirement_blocks[f'year_{i+AGE_0}'](theta[:,i],edu,a_w_t,a_r_t,all_y[:,:i,],all_w[:,i],pr_bar_t,b_bar_t)
+      outputs = self.work_retirement_blocks[f'year_{i+AGE_0}'](theta[:,i],edu,a_w_t,a_r_t,all_y[:,:i-1],all_w[:,i],pr_bar_t,b_bar_t)
 
       all_h[:, i] = outputs['h_t']
       all_pr_bar[:, i - i_ER+1] = outputs['pr_bar_next_t']
@@ -452,21 +453,21 @@ class Model(nn.Module):
       
     # The Latest retiement year
     
-    outputs = self.work_retirement_blocks[f'year_{i_LR+AGE_0}'](theta[:, i_LR-1],edu,a_w_t,a_r_t,all_y[:,:i_LR,],all_w[:, i_LR-1],pr_bar_t, b_bar_t)
+    outputs = self.work_retirement_blocks[f'year_{i_LR+AGE_0}'](theta[:, i_LR],edu,a_w_t,a_r_t,all_y[:,:i_LR-1],all_w[:, i_LR],pr_bar_t, b_bar_t)
 
     all_h[:, i_LR] = 0.00
     all_y[:, i_LR] = 0.00
     all_a[:, i_LR+1] = outputs['a_next_r_t']
     all_c[:, i_LR] = (1-pr_bar_t)*outputs['c_rw_t'] + pr_bar_t*outputs['c_rr_t']
-    all_c_ER[:, i_LR-i_ER+1, 0] = 1e-8
-    all_c_ER[:, i_LR-i_ER+1, 1] = outputs['c_rw_t']
-    all_c_ER[:, i_LR-i_ER+1, 2] = outputs['c_rr_t']
+    all_c_ER[:, i_LR-i_ER, 0] = 1e-8
+    all_c_ER[:, i_LR-i_ER, 1] = outputs['c_rw_t']
+    all_c_ER[:, i_LR-i_ER, 2] = outputs['c_rr_t']
     b_bar = outputs['b_bar_next_t']
-    all_pr[:,i_LR-i_ER+1] =  1
+    all_pr[:,i_LR-i_ER] =  1
 
     # The retiremnt years
 
-    for i in range(i_LR+1, i_D):
+    for i in range(i_LR+1, i_D-1):
       
       t = torch.ones_like(a_r_t).to(a_r_t.device) * (i+AGE_0)
       x_t = self.retirement_blocks(all_a[:,i],b_bar,t)
