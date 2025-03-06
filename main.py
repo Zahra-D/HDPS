@@ -103,7 +103,7 @@ def do_eval_save(model, dataloader, base_dir, epoch, device, s_writer,args):
     all_theta = torch.stack(all_theta)  
 
     # Generating Plots
-    draw_all_plots(base_dir, all_a, all_h, all_w, all_theta, all_c, all_y, epoch)
+    #draw_all_plots(base_dir, all_a, all_h, all_w, all_theta, all_c, all_y, epoch)
 
 
 # Running Experiments  --------------------
