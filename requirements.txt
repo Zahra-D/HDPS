@@ -1,0 +1,12 @@
+
+numpy               # Core numerical computing library (arrays, matrix ops, math)
+torch               # PyTorch - deep learning framework used for modeling and training
+seaborn             # High-level visualization library (built on matplotlib, good for stats)
+matplotlib          # Core Python plotting library (figures, axes, subplots)
+sympy               # Symbolic math (algebra, calculus, simplification)
+tqdm                # Lightweight progress bar (used in training loops, eval, etc.)
+pathlib             # Object-oriented filesystem paths (already built-in since Python 3.4)
+argparse            # Command-line argument parsing (built-in, but okay to list for clarity)
+json5               # JSON extension that allows comments and more flexible syntax (like JS-style)
+tensorboard         # TensorBoard for visualizing training (loss, metrics, gradients, etc.)
+nvidia-ml-py3       # NVIDIA Management Library (for querying GPU memory, temps, usage via pynvml)
