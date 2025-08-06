@@ -6,12 +6,14 @@ import numpy as np
 ## Life Cycle --------------------
 
 AGE_0 = 22 # Age of model start
-T_ER = 62 # Age of early retiermnet
-T_FR = 67 # Age of normal retierment
-T_LR = 70 # Age of Late Retirement
-T_D = 82 # AGe of Death
+AGE_ER = 62 # Age of early retiermnet
+AGE_FR = 67 # Age of normal retierment
+AGE_LR = 70 # Age of Late Retirement
+AGE_D = 82 # Age of Death
 
-Len_W_S = T_ER - AGE_0 # Lengh of working stage of the model
+T_W = AGE_ER - AGE_0 + 1 # in fixed retierment model: number of years working
+T_D = AGE_D - AGE_0 + 1 # period of death
+T_R = T_D - T_W + 1
 
 ## Initial Distribution --------------------
 
@@ -37,8 +39,8 @@ SIGMA_e = np.sqrt(.02601) # standard deviation of persistent wage shocks
 BETA = 0.9880 # time predernce
 ETA = 0.5 # Fritch elasticity of labor supply
 GAMMA = 1.66 # risk aversion
-PSI = 0.01 # coefficient of disutility of hours of work
-PHI = 0.0006 # Coefficent of disutility of labor supply  
+#PSI = 0.01 # coefficient of disutility of hours of work
+#PHI = 0.0006 # Coefficent of disutility of labor supply  
 
 ## Budget Constaint -------------------- 
 
@@ -69,6 +71,6 @@ Len_S_Max_SS = 35 # Number of years count in pension benefit
 
 ## Simulation --------------------
 
-J = 1000000 # Simulation Sample Size
+#J = 1000000 # Simulation Sample Size
 
 
